@@ -20,6 +20,9 @@
     "test:api": "jest --testPathPattern=src/tests/api --forceExit",
     "test:e2e": "playwright test",
     "test:ci": "jest --forceExit --ci",
+    "client:install": "npm install --prefix client",
+    "client:dev": "npm run dev --prefix client",
+    "client:build": "npm run build --prefix client",
     "build": "npm run lint && npm run db:generate",
     "postinstall": "prisma generate || true"
   },

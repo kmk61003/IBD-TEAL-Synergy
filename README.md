@@ -2,6 +2,18 @@
 
 A full-stack, production-grade online jewellery store built with **Node.js (Express)**, **EJS + Bootstrap 5**, **Prisma (SQL Server)**, **Passport** authentication, **Razorpay/Stripe** payments, and comprehensive **OWASP** security hardening.
 
+This repository contains **two runnable applications**:
+
+| App | Directory | Stack | Purpose |
+|-----|-----------|-------|---------|
+| 🖥️ **Express backend** | `/` (root) | Node.js + Express + EJS + Prisma + SQL Server | Full-stack SSR store (auth, cart, checkout, admin) |
+| ⚛️ **React client** | `client/` | React 18 + React Router + Vite | SPA frontend (product browsing, cart, style advisor) |
+
+Both apps can run independently or side-by-side. Jump to the section you need:
+
+- [Running the Express backend](#how-to-run-express-backend)
+- [Running the React client](#how-to-run-react-client)
+
 ## Features
 
 - 🛍️ **Product Catalog** – Browse, search, filter by category with pagination
@@ -17,7 +29,7 @@ A full-stack, production-grade online jewellery store built with **Node.js (Expr
 
 ---
 
-## How to Run
+## How to Run: Express Backend
 
 Choose the path that matches your environment:
 
@@ -25,6 +37,7 @@ Choose the path that matches your environment:
 |---|---|---|
 | ✅ Easiest | [Option A – Docker Compose](#option-a--docker-compose-recommended) | Docker Desktop |
 | 🛠️ Full control | [Option B – Local SQL Server](#option-b--local-sql-server) | SQL Server 2019+ / SQL Server Express |
+| ⚛️ Just the UI | [React Client](#how-to-run-react-client) | Node.js 20+ only (no DB needed) |
 
 ---
 
@@ -184,6 +197,8 @@ Password: Admin@12345!
 
 ## NPM Script Reference
 
+### Express Backend (root directory)
+
 ```bash
 npm run dev           # Start dev server with hot-reload (nodemon)
 npm start             # Start production server (node server.js)
@@ -200,7 +215,70 @@ npm test              # Unit tests (Jest)
 npm run test:api      # API integration tests (Jest + Supertest)
 npm run test:e2e      # End-to-end tests (Playwright)
 npm run test:ci       # All tests in CI mode
+
+# Client helpers (run from root)
+npm run client:install  # npm install inside client/
+npm run client:dev      # Start React dev server (port 5173)
+npm run client:build    # Build React app to client/dist/
 ```
+
+### React Client (`client/` directory)
+
+```bash
+cd client
+npm install
+npm run dev      # Start Vite dev server → http://localhost:5173
+npm run build    # Build for production → client/dist/
+npm run preview  # Preview production build → http://localhost:5173
+npm run lint     # Run ESLint on client code
+```
+
+---
+
+## How to Run: React Client
+
+The `client/` directory is a standalone **React + Vite** SPA. It runs independently from the Express backend and does not require a database.
+
+### Prerequisites
+
+- [Node.js 20+](https://nodejs.org/)
+
+### Steps
+
+```bash
+# 1. From the repo root, install client dependencies:
+npm run client:install
+# — or —
+cd client && npm install
+
+# 2. Start the Vite dev server:
+npm run client:dev
+# — or —
+cd client && npm run dev
+# → http://localhost:5173
+```
+
+The React app includes:
+
+| Route | Page |
+|-------|------|
+| `/` | Home – hero banner + featured products |
+| `/collections` | Product catalog with filters |
+| `/product/:id` | Product detail |
+| `/cart` | Shopping cart |
+| `/checkout` | Checkout form |
+| `/order-confirmation` | Order confirmation |
+| `/style-advisor` | AI style recommendation tool |
+
+### Build for production
+
+```bash
+cd client
+npm run build
+# Output → client/dist/
+```
+
+The built files in `client/dist/` can be served by any static web host (Vercel, Netlify, GitHub Pages, Azure Static Web Apps, etc.) or by the Express backend as static assets.
 
 ---
 
@@ -323,6 +401,8 @@ PORT=3001 npm run dev
 
 ```
 IBD-TEAL-Synergy/
+│
+│  ── Express Full-Stack Backend ──────────────────────────────────────────────
 ├── server.js                  # Entry point (graceful shutdown)
 ├── src/
 │   ├── app.js                 # Express factory (middleware + routes)
@@ -347,12 +427,30 @@ IBD-TEAL-Synergy/
 │   ├── schema.prisma          # Data models (SQL Server)
 │   ├── migrations/            # Migration SQL files
 │   └── seed.js                # Sample data + admin user
+├── package.json               # Express backend deps + npm scripts
+├── .env.example               # Environment variable template
+├── Dockerfile
+├── docker-compose.yml
+│
+│  ── React SPA Client ────────────────────────────────────────────────────────
+├── client/
+│   ├── package.json           # React + Vite deps + scripts
+│   ├── vite.config.js         # Vite configuration
+│   ├── index.html             # HTML entry point
+│   └── src/
+│       ├── main.jsx           # React app entry
+│       ├── App.jsx            # Router + layout
+│       ├── components/        # Navbar, ProductCard
+│       ├── context/           # CartContext (global state)
+│       ├── data/products.js   # Static product catalogue
+│       ├── pages/             # Home, Collections, ProductDetail, Cart,
+│       │                      # Checkout, OrderConfirmation, StyleAdvisor
+│       └── services/          # AI style recommender
+│
+│  ── CI/CD & Docs ────────────────────────────────────────────────────────────
 ├── .github/
 │   ├── workflows/             # ci.yml, codeql.yml, deploy.yml
 │   └── dependabot.yml
-├── Dockerfile
-├── docker-compose.yml
-├── .env.example
 └── SECURITY.md                # OWASP Top 10 control mapping
 ```
 
