@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { sql, poolPromise } = require('../config/db');
+const db = require('../config/db');
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
@@ -13,30 +13,18 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'First name, email and password are required.' });
         }
 
-        const pool = await poolPromise;
-
-        // Check if email already exists
-        const existing = await pool.request()
-            .input('email', sql.VarChar(255), email)
-            .query('SELECT id FROM customer WHERE email = @email');
-
-        if (existing.recordset.length > 0) {
+        const existing = db.prepare('SELECT id FROM customer WHERE email = ?').get(email);
+        if (existing) {
             return res.status(409).json({ error: 'Email already registered.' });
         }
 
         const password_hash = await bcrypt.hash(password, 10);
 
-        const result = await pool.request()
-            .input('first_name', sql.NVarChar(100), first_name)
-            .input('last_name', sql.NVarChar(100), last_name || null)
-            .input('email', sql.VarChar(255), email)
-            .input('phone_no', sql.VarChar(20), phone_no || null)
-            .input('password_hash', sql.VarChar(255), password_hash)
-            .query(`INSERT INTO customer (first_name, last_name, email, phone_no, password_hash)
-                    OUTPUT INSERTED.id
-                    VALUES (@first_name, @last_name, @email, @phone_no, @password_hash)`);
+        const result = db.prepare(
+            'INSERT INTO customer (first_name, last_name, email, phone_no, password_hash) VALUES (?, ?, ?, ?, ?)'
+        ).run(first_name, last_name || null, email, phone_no || null, password_hash);
 
-        const customerId = result.recordset[0].id;
+        const customerId = result.lastInsertRowid;
 
         const token = jwt.sign(
             { id: customerId, email },
@@ -60,16 +48,14 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required.' });
         }
 
-        const pool = await poolPromise;
-        const result = await pool.request()
-            .input('email', sql.VarChar(255), email)
-            .query('SELECT id, first_name, last_name, email, password_hash FROM customer WHERE email = @email');
+        const customer = db.prepare(
+            'SELECT id, first_name, last_name, email, password_hash FROM customer WHERE email = ?'
+        ).get(email);
 
-        if (result.recordset.length === 0) {
+        if (!customer) {
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
 
-        const customer = result.recordset[0];
         const valid = await bcrypt.compare(password, customer.password_hash);
 
         if (!valid) {

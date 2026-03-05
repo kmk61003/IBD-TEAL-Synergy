@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { sql, poolPromise } = require('../config/db');
-const auth = require('../middleware/auth');
+const db = require('../config/db');
 
 // Helper: get cart identifier (customer_id or session_id)
 function getCartIdentifier(req) {
@@ -27,22 +26,20 @@ function optionalAuth(req, res, next) {
 router.use(optionalAuth);
 
 // GET /api/cart
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
     try {
-        const pool = await poolPromise;
         const identifier = getCartIdentifier(req);
-        const request = pool.request();
 
-        let whereClause;
+        let whereClause, paramValue;
         if (identifier.type === 'customer') {
-            request.input('customer_id', sql.Int, identifier.value);
-            whereClause = 'c.customer_id = @customer_id';
+            whereClause = 'c.customer_id = ?';
+            paramValue = identifier.value;
         } else {
-            request.input('session_id', sql.VarChar(255), identifier.value);
-            whereClause = 'c.session_id = @session_id';
+            whereClause = 'c.session_id = ?';
+            paramValue = identifier.value;
         }
 
-        const result = await request.query(`
+        const rows = db.prepare(`
             SELECT
                 c.id,
                 c.lot_product_id,
@@ -50,15 +47,15 @@ router.get('/', async (req, res) => {
                 lp.sku, lp.metal, lp.size, lp.weight, lp.price, lp.discount_price, lp.inventory,
                 mp.name as product_name,
                 mp.id as master_product_id,
-                (SELECT TOP 1 image_path FROM product_image WHERE master_product_id = mp.id AND is_primary = 1) as image_path
+                (SELECT image_path FROM product_image WHERE master_product_id = mp.id AND is_primary = 1 LIMIT 1) as image_path
             FROM cart c
             JOIN lot_product lp ON lp.id = c.lot_product_id
             JOIN master_product mp ON mp.id = lp.master_product_id
             WHERE ${whereClause}
             ORDER BY c.created_at DESC
-        `);
+        `).all(paramValue);
 
-        const items = result.recordset.map(item => ({
+        const items = rows.map(item => ({
             ...item,
             effective_price: item.discount_price || item.price,
             line_total: (item.discount_price || item.price) * item.quantity
@@ -74,62 +71,41 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/cart
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
     try {
         const { lot_product_id, quantity = 1 } = req.body;
         if (!lot_product_id) return res.status(400).json({ error: 'lot_product_id is required.' });
 
-        const pool = await poolPromise;
         const identifier = getCartIdentifier(req);
 
-        // Verify product exists and has inventory
-        const productCheck = await pool.request()
-            .input('lotId', sql.Int, lot_product_id)
-            .query(`SELECT id, inventory, status FROM lot_product WHERE id = @lotId AND status = 'active'`);
+        const product = db.prepare("SELECT id, inventory, status FROM lot_product WHERE id = ? AND status = 'active'").get(lot_product_id);
 
-        if (productCheck.recordset.length === 0) {
+        if (!product) {
             return res.status(404).json({ error: 'Product variant not found or unavailable.' });
         }
 
-        if (productCheck.recordset[0].inventory < quantity) {
+        if (product.inventory < quantity) {
             return res.status(400).json({ error: 'Insufficient inventory.' });
         }
 
-        const request = pool.request();
-        request.input('lot_product_id', sql.Int, lot_product_id);
-
-        let existingQuery;
+        let existing;
         if (identifier.type === 'customer') {
-            request.input('customer_id', sql.Int, identifier.value);
-            existingQuery = 'SELECT id, quantity FROM cart WHERE customer_id = @customer_id AND lot_product_id = @lot_product_id';
+            existing = db.prepare('SELECT id, quantity FROM cart WHERE customer_id = ? AND lot_product_id = ?').get(identifier.value, lot_product_id);
         } else {
-            request.input('session_id', sql.VarChar(255), identifier.value);
-            existingQuery = 'SELECT id, quantity FROM cart WHERE session_id = @session_id AND lot_product_id = @lot_product_id';
+            existing = db.prepare('SELECT id, quantity FROM cart WHERE session_id = ? AND lot_product_id = ?').get(identifier.value, lot_product_id);
         }
 
-        const existing = await request.query(existingQuery);
-
-        if (existing.recordset.length > 0) {
-            // Update quantity
-            const newQty = existing.recordset[0].quantity + quantity;
-            if (newQty > productCheck.recordset[0].inventory) {
+        if (existing) {
+            const newQty = existing.quantity + quantity;
+            if (newQty > product.inventory) {
                 return res.status(400).json({ error: 'Insufficient inventory for requested quantity.' });
             }
-            await pool.request()
-                .input('id', sql.Int, existing.recordset[0].id)
-                .input('quantity', sql.Int, newQty)
-                .query('UPDATE cart SET quantity = @quantity WHERE id = @id');
+            db.prepare('UPDATE cart SET quantity = ? WHERE id = ?').run(newQty, existing.id);
         } else {
-            // Insert new cart item
-            const insertReq = pool.request();
-            insertReq.input('lot_product_id', sql.Int, lot_product_id);
-            insertReq.input('quantity', sql.Int, quantity);
             if (identifier.type === 'customer') {
-                insertReq.input('customer_id', sql.Int, identifier.value);
-                await insertReq.query('INSERT INTO cart (customer_id, lot_product_id, quantity) VALUES (@customer_id, @lot_product_id, @quantity)');
+                db.prepare('INSERT INTO cart (customer_id, lot_product_id, quantity) VALUES (?, ?, ?)').run(identifier.value, lot_product_id, quantity);
             } else {
-                insertReq.input('session_id', sql.VarChar(255), identifier.value);
-                await insertReq.query('INSERT INTO cart (session_id, lot_product_id, quantity) VALUES (@session_id, @lot_product_id, @quantity)');
+                db.prepare('INSERT INTO cart (session_id, lot_product_id, quantity) VALUES (?, ?, ?)').run(identifier.value, lot_product_id, quantity);
             }
         }
 
@@ -141,7 +117,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/cart/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', (req, res) => {
     try {
         const cartItemId = parseInt(req.params.id);
         const { quantity } = req.body;
@@ -150,39 +126,25 @@ router.put('/:id', async (req, res) => {
             return res.status(400).json({ error: 'Valid cart item ID and quantity are required.' });
         }
 
-        const pool = await poolPromise;
         const identifier = getCartIdentifier(req);
 
-        // Verify ownership
-        const request = pool.request();
-        request.input('id', sql.Int, cartItemId);
-        let ownerCheck;
+        let cartItem;
         if (identifier.type === 'customer') {
-            request.input('customer_id', sql.Int, identifier.value);
-            ownerCheck = 'SELECT c.id, c.lot_product_id FROM cart c WHERE c.id = @id AND c.customer_id = @customer_id';
+            cartItem = db.prepare('SELECT id, lot_product_id FROM cart WHERE id = ? AND customer_id = ?').get(cartItemId, identifier.value);
         } else {
-            request.input('session_id', sql.VarChar(255), identifier.value);
-            ownerCheck = 'SELECT c.id, c.lot_product_id FROM cart c WHERE c.id = @id AND c.session_id = @session_id';
+            cartItem = db.prepare('SELECT id, lot_product_id FROM cart WHERE id = ? AND session_id = ?').get(cartItemId, identifier.value);
         }
 
-        const cartItem = await request.query(ownerCheck);
-        if (cartItem.recordset.length === 0) {
+        if (!cartItem) {
             return res.status(404).json({ error: 'Cart item not found.' });
         }
 
-        // Check inventory
-        const invCheck = await pool.request()
-            .input('lotId', sql.Int, cartItem.recordset[0].lot_product_id)
-            .query('SELECT inventory FROM lot_product WHERE id = @lotId');
-
-        if (invCheck.recordset[0].inventory < quantity) {
+        const inv = db.prepare('SELECT inventory FROM lot_product WHERE id = ?').get(cartItem.lot_product_id);
+        if (inv.inventory < quantity) {
             return res.status(400).json({ error: 'Insufficient inventory.' });
         }
 
-        await pool.request()
-            .input('id', sql.Int, cartItemId)
-            .input('quantity', sql.Int, quantity)
-            .query('UPDATE cart SET quantity = @quantity WHERE id = @id');
+        db.prepare('UPDATE cart SET quantity = ? WHERE id = ?').run(quantity, cartItemId);
 
         res.json({ message: 'Cart updated.' });
     } catch (err) {
@@ -192,23 +154,17 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/cart/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', (req, res) => {
     try {
         const cartItemId = parseInt(req.params.id);
         if (isNaN(cartItemId)) return res.status(400).json({ error: 'Invalid cart item ID.' });
 
-        const pool = await poolPromise;
         const identifier = getCartIdentifier(req);
 
-        const request = pool.request();
-        request.input('id', sql.Int, cartItemId);
-
         if (identifier.type === 'customer') {
-            request.input('customer_id', sql.Int, identifier.value);
-            await request.query('DELETE FROM cart WHERE id = @id AND customer_id = @customer_id');
+            db.prepare('DELETE FROM cart WHERE id = ? AND customer_id = ?').run(cartItemId, identifier.value);
         } else {
-            request.input('session_id', sql.VarChar(255), identifier.value);
-            await request.query('DELETE FROM cart WHERE id = @id AND session_id = @session_id');
+            db.prepare('DELETE FROM cart WHERE id = ? AND session_id = ?').run(cartItemId, identifier.value);
         }
 
         res.json({ message: 'Item removed from cart.' });
