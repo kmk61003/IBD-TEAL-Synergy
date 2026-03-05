@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Categories - IBD Teal Admin</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar admin-navbar">
+        <div class="nav-container">
+            <a href="/admin/dashboard.html" class="nav-logo">IBD Teal Admin</a>
+            <div class="nav-links">
+                <a href="/admin/dashboard.html">Dashboard</a>
+                <a href="/admin/products.html">Products</a>
+                <a href="/admin/categories.html" class="active">Categories</a>
+                <a href="/admin/orders.html">Orders</a>
+                <span id="admin-name" class="nav-welcome"></span>
+                <a href="#" id="admin-logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Categories</h1>
+            <button class="btn btn-primary" id="add-cat-btn">+ Add Category</button>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr><th>Name</th><th>Slug</th><th>Products</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="cat-list"></tbody>
+        </table>
+
+        <!-- Category Form (inline) -->
+        <div id="cat-form-section" class="inline-form" style="display:none;">
+            <h3 id="cat-form-title">Add Category</h3>
+            <input type="hidden" id="cat-id" />
+            <div class="form-row">
+                <div class="form-group"><label>Name *</label><input type="text" id="cat-name" required /></div>
+                <div class="form-group"><label>Slug *</label><input type="text" id="cat-slug" required /></div>
+                <div class="form-group"><label>Status</label>
+                    <select id="cat-status" class="select-input">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="save-cat-btn">Save</button>
+            <button class="btn" id="cancel-cat-btn">Cancel</button>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/admin/admin-api.js"></script>
+    <script>
+        $(document).ready(function () {
+            if (!AdminAPI.checkAuth()) return;
+            AdminAPI.initNav();
+            $('#admin-logout').click(function (e) { e.preventDefault(); AdminAPI.logout(); });
+
+            loadCategories();
+
+            // Auto-generate slug from name
+            $('#cat-name').on('input', function () {
+                if (!$('#cat-id').val()) {
+                    $('#cat-slug').val($(this).val().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+                }
+            });
+
+            $('#add-cat-btn').click(function () {
+                $('#cat-form-section').show();
+                $('#cat-form-title').text('Add Category');
+                $('#cat-id').val('');
+                $('#cat-name, #cat-slug').val('');
+                $('#cat-status').val('active');
+            });
+
+            $('#cancel-cat-btn').click(function () {
+                $('#cat-form-section').hide();
+            });
+
+            $('#save-cat-btn').click(function () {
+                const id = $('#cat-id').val();
+                const data = {
+                    name: $('#cat-name').val(),
+                    slug: $('#cat-slug').val(),
+                    status: $('#cat-status').val()
+                };
+
+                const promise = id
+                    ? AdminAPI.put('/api/admin/categories/' + id, data)
+                    : AdminAPI.post('/api/admin/categories', data);
+
+                promise.then(() => {
+                    $('#cat-form-section').hide();
+                    loadCategories();
+                }).catch(err => {
+                    alert(err.responseJSON?.error || 'Failed to save category.');
+                });
+            });
+
+            // Edit
+            $(document).on('click', '.edit-cat-btn', function () {
+                const row = $(this).closest('tr');
+                $('#cat-form-section').show();
+                $('#cat-form-title').text('Edit Category');
+                $('#cat-id').val(row.data('id'));
+                $('#cat-name').val(row.data('name'));
+                $('#cat-slug').val(row.data('slug'));
+                $('#cat-status').val(row.data('status'));
+            });
+
+            // Delete
+            $(document).on('click', '.delete-cat-btn', function () {
+                const id = $(this).data('id');
+                if (confirm('Delete this category?')) {
+                    AdminAPI.delete('/api/admin/categories/' + id).then(() => loadCategories());
+                }
+            });
+        });
+
+        function loadCategories() {
+            AdminAPI.get('/api/admin/categories').then(cats => {
+                const tbody = $('#cat-list');
+                tbody.empty();
+                cats.forEach(c => {
+                    tbody.append(`
+                        <tr data-id="${c.id}" data-name="${$('<span>').text(c.name).html()}" data-slug="${$('<span>').text(c.slug).html()}" data-status="${c.status}">
+                            <td>${$('<span>').text(c.name).html()}</td>
+                            <td>${$('<span>').text(c.slug).html()}</td>
+                            <td>${c.product_count}</td>
+                            <td><span class="badge badge-${c.status}">${c.status}</span></td>
+                            <td>
+                                <button class="btn btn-sm edit-cat-btn">Edit</button>
+                                <button class="btn btn-sm btn-danger delete-cat-btn" data-id="${c.id}">Delete</button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

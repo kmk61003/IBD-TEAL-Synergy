@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - IBD Teal Jewelry</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar admin-navbar">
+        <div class="nav-container">
+            <a href="/admin/dashboard.html" class="nav-logo">IBD Teal Admin</a>
+            <div class="nav-links">
+                <a href="/admin/dashboard.html" class="active">Dashboard</a>
+                <a href="/admin/products.html">Products</a>
+                <a href="/admin/categories.html">Categories</a>
+                <a href="/admin/orders.html">Orders</a>
+                <span id="admin-name" class="nav-welcome"></span>
+                <a href="#" id="admin-logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>Dashboard</h1>
+
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <h3>Total Orders</h3>
+                <p class="stat-value" id="stat-orders">—</p>
+            </div>
+            <div class="stat-card">
+                <h3>Pending Orders</h3>
+                <p class="stat-value" id="stat-pending">—</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Revenue</h3>
+                <p class="stat-value" id="stat-revenue">—</p>
+            </div>
+            <div class="stat-card">
+                <h3>Active Products</h3>
+                <p class="stat-value" id="stat-products">—</p>
+            </div>
+            <div class="stat-card">
+                <h3>Customers</h3>
+                <p class="stat-value" id="stat-customers">—</p>
+            </div>
+            <div class="stat-card">
+                <h3>Categories</h3>
+                <p class="stat-value" id="stat-categories">—</p>
+            </div>
+        </div>
+
+        <h2>Recent Orders</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="recent-orders"></tbody>
+        </table>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/admin/admin-api.js"></script>
+    <script>
+        $(document).ready(function () {
+            if (!AdminAPI.checkAuth()) return;
+            AdminAPI.initNav();
+            $('#admin-logout').click(function (e) { e.preventDefault(); AdminAPI.logout(); });
+
+            AdminAPI.get('/api/admin/dashboard').then(data => {
+                const s = data.stats;
+                $('#stat-orders').text(s.total_orders);
+                $('#stat-pending').text(s.pending_orders);
+                $('#stat-revenue').text('₹' + Number(s.total_revenue).toLocaleString());
+                $('#stat-products').text(s.active_products);
+                $('#stat-customers').text(s.total_customers);
+                $('#stat-categories').text(s.active_categories);
+
+                const tbody = $('#recent-orders');
+                data.recent_orders.forEach(o => {
+                    tbody.append(`
+                        <tr>
+                            <td><a href="/admin/orders.html?id=${o.id}">${$('<span>').text(o.order_number).html()}</a></td>
+                            <td>${$('<span>').text((o.first_name || '') + ' ' + (o.last_name || '')).html() || 'Guest'}</td>
+                            <td>₹${Number(o.order_total).toLocaleString()}</td>
+                            <td><span class="badge badge-${o.order_status}">${o.order_status}</span></td>
+                            <td><span class="badge badge-${o.payment_status}">${o.payment_status}</span></td>
+                            <td>${new Date(o.created_at).toLocaleDateString()}</td>
+                        </tr>
+                    `);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

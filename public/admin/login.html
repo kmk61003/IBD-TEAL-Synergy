@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - IBD Teal Jewelry</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar admin-navbar">
+        <div class="nav-container">
+            <a href="/admin/dashboard.html" class="nav-logo">IBD Teal Admin</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="auth-container">
+            <div class="auth-form">
+                <h2>Admin Login</h2>
+                <form id="admin-login-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required />
+                    </div>
+                    <div id="login-error" class="error-message" style="display:none;"></div>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        $(document).ready(function () {
+            if (localStorage.getItem('admin_token')) {
+                window.location.href = '/admin/dashboard.html';
+                return;
+            }
+
+            $('#admin-login-form').submit(function (e) {
+                e.preventDefault();
+                $('#login-error').hide();
+                $.ajax({
+                    url: '/api/admin/auth/login',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        username: $('#username').val(),
+                        password: $('#password').val()
+                    })
+                }).then(data => {
+                    localStorage.setItem('admin_token', data.token);
+                    localStorage.setItem('admin_data', JSON.stringify(data.admin));
+                    window.location.href = '/admin/dashboard.html';
+                }).catch(err => {
+                    $('#login-error').text(err.responseJSON?.error || 'Login failed.').show();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

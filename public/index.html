@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBD Teal Jewelry</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">IBD Teal Jewelry</a>
+            <div class="nav-links">
+                <a href="/">Shop</a>
+                <a href="/cart.html" class="cart-link">Cart (<span id="cart-count">0</span>)</a>
+                <div id="auth-links">
+                    <a href="/login.html">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="shop-layout">
+            <!-- Category Sidebar -->
+            <aside class="sidebar">
+                <h3>Categories</h3>
+                <ul id="category-list" class="category-list">
+                    <li><a href="#" class="category-item active" data-slug="">All Products</a></li>
+                </ul>
+            </aside>
+
+            <!-- Product Grid -->
+            <section class="product-section">
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="Search jewelry..." />
+                    <button id="search-btn" class="btn">Search</button>
+                </div>
+
+                <div id="product-grid" class="product-grid">
+                    <!-- Products loaded via JS -->
+                </div>
+
+                <div id="pagination" class="pagination"></div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 IBD Teal Jewelry. All rights reserved.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        let currentCategory = '';
+        let currentPage = 1;
+        let currentSearch = '';
+
+        function loadCategories() {
+            API.get('/api/categories').then(categories => {
+                const list = $('#category-list');
+                categories.forEach(cat => {
+                    list.append(`<li><a href="#" class="category-item" data-slug="${cat.slug}">${cat.name}</a></li>`);
+                });
+            });
+        }
+
+        function loadProducts(page, category, search) {
+            let url = `/api/products?page=${page}&limit=12`;
+            if (category) url += `&category=${encodeURIComponent(category)}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            API.get(url).then(data => {
+                const grid = $('#product-grid');
+                grid.empty();
+
+                if (data.products.length === 0) {
+                    grid.html('<p class="no-results">No products found.</p>');
+                    return;
+                }
+
+                data.products.forEach(p => {
+                    const img = p.primary_image || '/css/placeholder.svg';
+                    const price = p.min_price ? `₹${Number(p.min_price).toLocaleString()}` : 'Price on request';
+                    const priceRange = p.max_price && p.max_price !== p.min_price
+                        ? ` - ₹${Number(p.max_price).toLocaleString()}`
+                        : '';
+
+                    grid.append(`
+                        <div class="product-card" onclick="window.location='/pdp.html?id=${p.id}'">
+                            <div class="product-image">
+                                <img src="${img}" alt="${$('<div>').text(p.name).html()}" />
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">${$('<div>').text(p.name).html()}</h3>
+                                <p class="product-desc">${$('<div>').text(p.short_description || '').html()}</p>
+                                <p class="product-price">${price}${priceRange}</p>
+                                <p class="product-categories">${$('<div>').text(p.categories || '').html()}</p>
+                            </div>
+                        </div>
+                    `);
+                });
+
+                // Pagination
+                const pg = data.pagination;
+                const pagDiv = $('#pagination');
+                pagDiv.empty();
+                if (pg.totalPages > 1) {
+                    if (pg.page > 1) pagDiv.append(`<button class="btn btn-sm" onclick="goPage(${pg.page - 1})">Prev</button>`);
+                    pagDiv.append(`<span class="page-info">Page ${pg.page} of ${pg.totalPages}</span>`);
+                    if (pg.page < pg.totalPages) pagDiv.append(`<button class="btn btn-sm" onclick="goPage(${pg.page + 1})">Next</button>`);
+                }
+            });
+        }
+
+        function goPage(page) {
+            currentPage = page;
+            loadProducts(currentPage, currentCategory, currentSearch);
+        }
+
+        $(document).ready(function () {
+            loadCategories();
+            loadProducts(1, '', '');
+            Auth.updateNav();
+
+            $(document).on('click', '.category-item', function (e) {
+                e.preventDefault();
+                $('.category-item').removeClass('active');
+                $(this).addClass('active');
+                currentCategory = $(this).data('slug');
+                currentPage = 1;
+                loadProducts(currentPage, currentCategory, currentSearch);
+            });
+
+            $('#search-btn').click(function () {
+                currentSearch = $('#search-input').val().trim();
+                currentPage = 1;
+                loadProducts(currentPage, currentCategory, currentSearch);
+            });
+
+            $('#search-input').keypress(function (e) {
+                if (e.which === 13) $('#search-btn').click();
+            });
+        });
+    </script>
+</body>
+</html>

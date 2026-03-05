@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Detail - IBD Teal Jewelry</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">IBD Teal Jewelry</a>
+            <div class="nav-links">
+                <a href="/">Shop</a>
+                <a href="/cart.html" class="cart-link">Cart (<span id="cart-count">0</span>)</a>
+                <div id="auth-links">
+                    <a href="/login.html">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div id="pdp-loading" class="loading">Loading product...</div>
+
+        <div id="pdp-content" class="pdp-layout" style="display:none;">
+            <!-- Image Gallery -->
+            <div class="pdp-gallery">
+                <div class="main-image">
+                    <img id="main-img" src="" alt="Product" />
+                </div>
+                <div id="thumbnail-list" class="thumbnail-list"></div>
+            </div>
+
+            <!-- Product Details -->
+            <div class="pdp-details">
+                <nav class="breadcrumb" id="breadcrumb"></nav>
+                <h1 id="product-name"></h1>
+                <p id="product-description" class="product-full-desc"></p>
+
+                <div class="price-section">
+                    <span id="product-price" class="price-main"></span>
+                    <span id="product-original-price" class="price-original"></span>
+                </div>
+
+                <!-- Variant Selector -->
+                <div id="variant-section" class="variant-section">
+                    <div class="variant-group">
+                        <label>Metal:</label>
+                        <select id="metal-select" class="select-input"></select>
+                    </div>
+                    <div class="variant-group">
+                        <label>Size:</label>
+                        <select id="size-select" class="select-input"></select>
+                    </div>
+                </div>
+
+                <div class="variant-info">
+                    <p>SKU: <span id="variant-sku">—</span></p>
+                    <p>Weight: <span id="variant-weight">—</span></p>
+                    <p>Availability: <span id="variant-stock">—</span></p>
+                </div>
+
+                <div class="add-to-cart-section">
+                    <div class="quantity-control">
+                        <button id="qty-minus" class="btn btn-sm">−</button>
+                        <input type="number" id="qty-input" value="1" min="1" class="qty-input" />
+                        <button id="qty-plus" class="btn btn-sm">+</button>
+                    </div>
+                    <button id="add-to-cart-btn" class="btn btn-primary btn-lg">Add to Cart</button>
+                </div>
+                <div id="cart-message" class="cart-message"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 IBD Teal Jewelry. All rights reserved.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/pdp.js"></script>
+</body>
+</html>
