@@ -1,0 +1,84 @@
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <h1 class="mb-4">Complete Payment</h1>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between mb-3">
+            <h5 class="mb-0">Order Total</h5>
+            <span class="fs-4 fw-bold"><%= cart.subtotalFormatted %></span>
+          </div>
+
+          <div class="alert alert-info d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <small>This is a <strong>demo environment</strong>. Use test credentials below.</small>
+          </div>
+
+          <% if (paymentProvider === 'razorpay') { %>
+            <!-- Razorpay Payment Button -->
+            <button id="rzp-button" class="btn btn-dark w-100 fw-semibold py-3">
+              <i class="bi bi-credit-card me-2"></i>Pay <%= cart.subtotalFormatted %>
+            </button>
+
+            <form id="verify-form" method="POST" action="/checkout/verify">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="order_id" value="<%= order.id %>">
+              <input type="hidden" id="rzp_order_id" name="razorpay_order_id" value="<%= paymentOrder.orderId %>">
+              <input type="hidden" id="rzp_payment_id" name="razorpay_payment_id">
+              <input type="hidden" id="rzp_signature" name="razorpay_signature">
+            </form>
+          <% } else { %>
+            <!-- Stripe Payment -->
+            <form id="verify-form" method="POST" action="/checkout/verify">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="order_id" value="<%= order.id %>">
+              <input type="hidden" name="stripe_payment_intent_id" value="<%= paymentOrder.orderId %>">
+              <button type="submit" class="btn btn-dark w-100 fw-semibold py-3">
+                <i class="bi bi-credit-card me-2"></i>Pay <%= cart.subtotalFormatted %>
+              </button>
+            </form>
+          <% } %>
+
+          <p class="text-center text-muted small mt-3">
+            <% if (paymentProvider === 'razorpay') { %>
+              Test card: Use any test card details in the Razorpay modal
+            <% } else { %>
+              Test card: 4242 4242 4242 4242 | Any expiry | Any CVV
+            <% } %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (paymentProvider === 'razorpay') { %>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+(function() {
+  var options = {
+    key: '<%= paymentClientConfig.key %>',
+    amount: '<%= paymentOrder.amount %>',
+    currency: '<%= paymentOrder.currency %>',
+    name: 'TEAL Jewellery',
+    description: 'Order #<%= order.id.slice(0,8).toUpperCase() %>',
+    order_id: '<%= paymentOrder.orderId %>',
+    prefill: {
+      name: '<%= user.name %>',
+      email: '<%= user.email %>'
+    },
+    theme: { color: '#0d9488' },
+    handler: function(response) {
+      document.getElementById('rzp_payment_id').value = response.razorpay_payment_id;
+      document.getElementById('rzp_signature').value = response.razorpay_signature;
+      document.getElementById('verify-form').submit();
+    }
+  };
+  document.getElementById('rzp-button').addEventListener('click', function() {
+    var rzp = new Razorpay(options);
+    rzp.open();
+  });
+})();
+</script>
+<% } %>

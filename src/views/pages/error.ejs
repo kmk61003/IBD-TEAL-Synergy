@@ -1,0 +1,11 @@
+<div class="container py-5 text-center">
+  <div class="mb-4">
+    <span class="display-1 text-muted"><%= status || 500 %></span>
+  </div>
+  <h1 class="display-6 fw-bold mb-3"><%= title || 'Error' %></h1>
+  <p class="lead text-muted mb-4"><%= message || 'An unexpected error occurred.' %></p>
+  <div class="d-flex justify-content-center gap-3">
+    <a href="/" class="btn btn-dark px-4">Go Home</a>
+    <button onclick="history.back()" class="btn btn-outline-secondary px-4">Go Back</button>
+  </div>
+</div>

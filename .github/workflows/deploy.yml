@@ -1,0 +1,68 @@
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install production dependencies
+        run: npm ci --omit=dev
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .
+
+      - name: Configure App Service settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          app-settings-json: |
+            [
+              { "name": "NODE_ENV",           "value": "production",                        "slotSetting": false },
+              { "name": "DATABASE_URL",        "value": "${{ secrets.DATABASE_URL }}",        "slotSetting": false },
+              { "name": "SESSION_SECRET",      "value": "${{ secrets.SESSION_SECRET }}",      "slotSetting": false },
+              { "name": "CSRF_SECRET",         "value": "${{ secrets.CSRF_SECRET }}",         "slotSetting": false },
+              { "name": "RAZORPAY_KEY_ID",     "value": "${{ secrets.RAZORPAY_KEY_ID }}",     "slotSetting": false },
+              { "name": "RAZORPAY_KEY_SECRET", "value": "${{ secrets.RAZORPAY_KEY_SECRET }}", "slotSetting": false },
+              { "name": "RAZORPAY_WEBHOOK_SECRET", "value": "${{ secrets.RAZORPAY_WEBHOOK_SECRET }}", "slotSetting": false },
+              { "name": "SMTP_HOST",           "value": "${{ secrets.SMTP_HOST }}",           "slotSetting": false },
+              { "name": "SMTP_PORT",           "value": "${{ secrets.SMTP_PORT }}",           "slotSetting": false },
+              { "name": "SMTP_USER",           "value": "${{ secrets.SMTP_USER }}",           "slotSetting": false },
+              { "name": "SMTP_PASS",           "value": "${{ secrets.SMTP_PASS }}",           "slotSetting": false },
+              { "name": "BASE_URL",            "value": "${{ secrets.BASE_URL }}",            "slotSetting": false }
+            ]
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}

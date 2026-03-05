@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'copilot/**']
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  lint-test-build:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client (no DB needed)
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "sqlserver://localhost:1433;database=teal;integratedSecurity=true;trustServerCertificate=true"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test -- --ci --coverage --testPathPattern=src/tests/unit
+        env:
+          NODE_ENV: test
+          SESSION_SECRET: ci-session-secret-long-enough-for-tests
+          CSRF_SECRET: ci-csrf-secret-long-enough-for-tests
+          DEV_SKIP_EMAIL_VERIFY: "true"
+
+      - name: API tests
+        run: npm run test -- --ci --testPathPattern=src/tests/api
+        env:
+          NODE_ENV: test
+          SESSION_SECRET: ci-session-secret-long-enough-for-tests
+          CSRF_SECRET: ci-csrf-secret-long-enough-for-tests
+          DEV_SKIP_EMAIL_VERIFY: "true"
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Audit (fail on high+critical)
+        run: npm audit --audit-level=high

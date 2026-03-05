@@ -1,0 +1,121 @@
+<!-- Page Header -->
+<div class="bg-dark text-white py-4">
+  <div class="container">
+    <h1 class="mb-0">All Jewellery</h1>
+  </div>
+</div>
+
+<div class="container py-4">
+  <!-- Search & Filter Bar -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" action="/catalog" class="row g-3 align-items-end">
+        <div class="col-md-6">
+          <label for="q" class="form-label fw-semibold small">Search</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="q" name="q"
+              placeholder="Search jewellery…" value="<%= query.q || '' %>">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label for="category" class="form-label fw-semibold small">Category</label>
+          <select class="form-select" id="category" name="category">
+            <option value="">All Categories</option>
+            <% categories.forEach(cat => { %>
+              <option value="<%= cat %>" <%= query.category === cat ? 'selected' : '' %>><%= cat %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button type="submit" class="btn btn-dark flex-fill">
+            <i class="bi bi-funnel me-1"></i>Filter
+          </button>
+          <% if (query.q || query.category) { %>
+            <a href="/catalog" class="btn btn-outline-secondary">Clear</a>
+          <% } %>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results count -->
+  <p class="text-muted mb-3">
+    <% if (query.q) { %>
+      <strong><%= pagination.total %></strong> result<%= pagination.total !== 1 ? 's' : '' %> for "<%= query.q %>"
+    <% } else { %>
+      Showing <strong><%= pagination.total %></strong> piece<%= pagination.total !== 1 ? 's' : '' %>
+    <% } %>
+  </p>
+
+  <!-- Products Grid -->
+  <% if (products.length) { %>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4">
+      <% products.forEach(product => { %>
+      <div class="col">
+        <div class="card product-card h-100 shadow-sm border-0">
+          <a href="/catalog/<%= product.slug %>" class="text-decoration-none text-dark">
+            <div class="product-img-wrap bg-secondary-subtle">
+              <% if (product.images && product.images.length) { %>
+                <img src="<%= product.images[0] %>" class="card-img-top" alt="<%= product.title %>" loading="lazy">
+              <% } else { %>
+                <div class="d-flex align-items-center justify-content-center h-100 text-secondary">
+                  <i class="bi bi-gem fs-1"></i>
+                </div>
+              <% } %>
+            </div>
+          </a>
+          <div class="card-body">
+            <% if (product.categories && product.categories.length) { %>
+              <small class="text-teal fw-semibold"><%= product.categories[0] %></small>
+            <% } %>
+            <h5 class="card-title mt-1 h6">
+              <a href="/catalog/<%= product.slug %>" class="text-decoration-none text-dark stretched-link-inner">
+                <%= product.title %>
+              </a>
+            </h5>
+            <p class="card-text text-muted small" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+              <%= product.description %>
+            </p>
+          </div>
+          <div class="card-footer border-0 bg-transparent d-flex justify-content-between align-items-center">
+            <span class="fs-6 fw-bold"><%= product.priceFormatted %></span>
+            <a href="/catalog/<%= product.slug %>" class="btn btn-dark btn-sm">View</a>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (pagination.pages > 1) { %>
+    <nav class="mt-4" aria-label="Product pagination">
+      <ul class="pagination justify-content-center">
+        <li class="page-item <%= pagination.page <= 1 ? 'disabled' : '' %>">
+          <a class="page-link" href="?page=<%= pagination.page - 1 %>&q=<%= query.q || '' %>&category=<%= query.category || '' %>">
+            &laquo; Previous
+          </a>
+        </li>
+        <% for (let i = 1; i <= pagination.pages; i++) { %>
+        <li class="page-item <%= pagination.page === i ? 'active' : '' %>">
+          <a class="page-link" href="?page=<%= i %>&q=<%= query.q || '' %>&category=<%= query.category || '' %>"><%= i %></a>
+        </li>
+        <% } %>
+        <li class="page-item <%= pagination.page >= pagination.pages ? 'disabled' : '' %>">
+          <a class="page-link" href="?page=<%= pagination.page + 1 %>&q=<%= query.q || '' %>&category=<%= query.category || '' %>">
+            Next &raquo;
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <% } %>
+
+  <% } else { %>
+    <div class="text-center py-5">
+      <div class="fs-1 mb-3">◇</div>
+      <h3>No pieces found</h3>
+      <p class="text-muted">Try adjusting your search or clearing filters.</p>
+      <a href="/catalog" class="btn btn-dark mt-2">View All</a>
+    </div>
+  <% } %>
+</div>

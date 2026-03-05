@@ -1,0 +1,53 @@
+<div class="container-fluid py-4">
+  <h1 class="mb-4">Admin Dashboard</h1>
+
+  <div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm text-center p-3">
+        <div class="display-5 fw-bold text-teal mb-1"><%= stats.productCount %></div>
+        <div class="text-muted">Products</div>
+        <a href="/admin/products" class="btn btn-sm btn-outline-dark mt-2">Manage</a>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm text-center p-3">
+        <div class="display-5 fw-bold text-teal mb-1"><%= stats.orderCount %></div>
+        <div class="text-muted">Total Orders</div>
+        <a href="/admin/orders" class="btn btn-sm btn-outline-dark mt-2">View Orders</a>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm text-center p-3">
+        <div class="display-5 fw-bold text-warning mb-1"><%= stats.pendingOrders %></div>
+        <div class="text-muted">Pending Orders</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm text-center p-3">
+        <div class="display-5 fw-bold text-success mb-1"><%= stats.revenue %></div>
+        <div class="text-muted">Total Revenue (Paid)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Quick Actions</h5>
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="/admin/products/new" class="btn btn-dark">
+              <i class="bi bi-plus-circle me-1"></i>New Product
+            </a>
+            <a href="/admin/orders" class="btn btn-outline-dark">
+              <i class="bi bi-list-ul me-1"></i>All Orders
+            </a>
+            <a href="/catalog" class="btn btn-outline-secondary" target="_blank">
+              <i class="bi bi-eye me-1"></i>View Store
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

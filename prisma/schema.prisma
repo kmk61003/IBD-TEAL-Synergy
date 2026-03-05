@@ -1,0 +1,74 @@
+// This is your Prisma schema file for TEAL Jewellery Platform
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       String     @id @default(uuid())
+  email                    String     @unique @db.NVarChar(255)
+  hashedPassword           String?    @db.NVarChar(255)
+  name                     String     @default("") @db.NVarChar(255)
+  role                     String     @default("user") @db.NVarChar(20) // user | admin
+  emailVerifiedAt          DateTime?
+  emailVerificationToken   String?    @db.NVarChar(255)
+  emailVerificationExpires DateTime?
+  loginAttempts            Int        @default(0)
+  lockUntil                DateTime?
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
+
+  cartItems                CartItem[]
+  orders                   Order[]
+}
+
+model Product {
+  id          String     @id @default(uuid())
+  title       String     @db.NVarChar(255)
+  slug        String     @unique @db.NVarChar(255)
+  description String?    @db.NVarChar(Max)
+  price       Int        // minor units (paise for INR, pence for GBP)
+  stock       Int        @default(0)
+  images      String     @default("[]") @db.NVarChar(Max) // JSON array
+  categories  String     @default("[]") @db.NVarChar(Max) // JSON array
+  featured    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  cartItems   CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  userId    String   @db.NVarChar(36)
+  productId String   @db.NVarChar(36)
+  qty       Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id              String    @id @default(uuid())
+  userId          String    @db.NVarChar(36)
+  status          String    @default("PENDING") @db.NVarChar(20) // PENDING | PAID | FAILED
+  total           Int       // minor units
+  currency        String    @default("INR") @db.NVarChar(10)
+  paymentProvider String?   @db.NVarChar(20) // razorpay | stripe
+  paymentRef      String?   @db.NVarChar(255) // payment id from provider
+  paymentOrderId  String?   @db.NVarChar(255) // order id from provider
+  items           String    @default("[]") @db.NVarChar(Max) // JSON snapshot at time of purchase
+  shippingAddress String?   @db.NVarChar(Max) // JSON
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

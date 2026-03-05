@@ -1,0 +1,50 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Products</h1>
+    <a href="/admin/products/new" class="btn btn-dark">
+      <i class="bi bi-plus-circle me-1"></i>New Product
+    </a>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Title</th>
+            <th>Slug</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Featured</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% products.forEach(p => { %>
+          <tr>
+            <td class="fw-semibold"><%= p.title %></td>
+            <td class="text-muted small"><%= p.slug %></td>
+            <td><%= p.priceFormatted %></td>
+            <td>
+              <span class="badge <%= p.stock > 0 ? 'bg-success' : 'bg-danger' %>"><%= p.stock %></span>
+            </td>
+            <td>
+              <% if (p.featured) { %><i class="bi bi-star-fill text-warning"></i><% } else { %><i class="bi bi-star text-muted"></i><% } %>
+            </td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="/admin/products/<%= p.id %>/edit" class="btn btn-sm btn-outline-dark">Edit</a>
+                <form method="POST" action="/admin/products/<%= p.id %>?_method=DELETE"
+                  onsubmit="return confirm('Delete this product?')">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

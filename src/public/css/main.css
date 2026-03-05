@@ -1,0 +1,138 @@
+/* ═══════════════════════════════════════════
+   TEAL Jewellery – Main Stylesheet
+   ═══════════════════════════════════════════ */
+
+:root {
+  --teal-600: #0d9488;
+  --teal-700: #0f766e;
+  --gold: #c9a96e;
+  --dark: #111827;
+  --navbar-height: 66px;
+}
+
+/* ── Accessibility ───────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--teal-600);
+  color: #fff;
+  padding: 8px 16px;
+  z-index: 9999;
+  transition: top 0.2s;
+}
+.skip-link:focus { top: 0; }
+
+*:focus-visible {
+  outline: 3px solid var(--teal-600);
+  outline-offset: 2px;
+}
+
+/* ── Typography ──────────────────────────── */
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--dark);
+}
+
+.text-teal { color: var(--teal-600) !important; }
+.bg-teal   { background-color: var(--teal-600) !important; color: #fff !important; }
+
+/* ── Navbar ──────────────────────────────── */
+.teal-navbar {
+  background: var(--dark);
+  min-height: var(--navbar-height);
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+.teal-navbar .navbar-brand { font-size: 1.25rem; letter-spacing: .5px; }
+.teal-navbar .nav-link { color: rgba(255,255,255,.85) !important; transition: color .2s; }
+.teal-navbar .nav-link:hover,
+.teal-navbar .nav-link.active { color: #fff !important; }
+
+/* ── Hero ────────────────────────────────── */
+.hero-section {
+  background: linear-gradient(135deg, var(--dark) 0%, #1e3a3a 50%, var(--teal-700) 100%);
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* ── Product Cards ───────────────────────── */
+.product-card {
+  transition: transform .2s, box-shadow .2s;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+}
+.product-img-wrap {
+  height: 220px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+}
+.product-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s;
+}
+.product-card:hover .product-img-wrap img {
+  transform: scale(1.04);
+}
+
+/* ── Product Detail ──────────────────────── */
+.product-detail-img {
+  height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.product-detail-img img {
+  max-height: 420px;
+  object-fit: contain;
+}
+
+/* ── Footer ──────────────────────────────── */
+.teal-footer {
+  background: var(--dark);
+  color: #fff;
+}
+.teal-footer a:hover { color: var(--gold) !important; }
+
+/* ── Forms ───────────────────────────────── */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--teal-600);
+  box-shadow: 0 0 0 .25rem rgba(13,148,136,.25);
+}
+
+/* ── Buttons ─────────────────────────────── */
+.btn-dark:hover { background-color: var(--teal-700); border-color: var(--teal-700); }
+
+/* ── Admin sidebar ───────────────────────── */
+.admin-sidebar .nav-link {
+  color: rgba(255,255,255,.75);
+  border-radius: 6px;
+  padding: .5rem 1rem;
+  transition: background .15s, color .15s;
+}
+.admin-sidebar .nav-link:hover,
+.admin-sidebar .nav-link.active {
+  background: rgba(255,255,255,.1);
+  color: #fff;
+}
+
+/* ── Utilities ───────────────────────────── */
+.fw-mono { font-family: 'Courier New', monospace; }
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .hero-section { min-height: 380px; }
+  .product-img-wrap { height: 180px; }
+}

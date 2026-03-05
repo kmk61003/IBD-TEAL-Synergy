@@ -1,0 +1,127 @@
+<div class="container py-5">
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/" class="text-dark">Home</a></li>
+      <li class="breadcrumb-item"><a href="/catalog" class="text-dark">Collections</a></li>
+      <li class="breadcrumb-item active"><%= product.title %></li>
+    </ol>
+  </nav>
+
+  <div class="row g-5">
+    <!-- Product Image -->
+    <div class="col-md-5">
+      <div class="product-detail-img bg-secondary-subtle rounded-3 d-flex align-items-center justify-content-center">
+        <% if (product.images && product.images.length) { %>
+          <img src="<%= product.images[0] %>" class="img-fluid rounded-3" alt="<%= product.title %>">
+        <% } else { %>
+          <i class="bi bi-gem display-1 text-secondary"></i>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="col-md-7">
+      <% if (product.categories && product.categories.length) { %>
+        <div class="mb-2">
+          <% product.categories.forEach(cat => { %>
+            <a href="/catalog?category=<%= encodeURIComponent(cat) %>" class="badge bg-teal text-decoration-none me-1">
+              <%= cat %>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <h1 class="display-6 fw-bold mb-2"><%= product.title %></h1>
+      <div class="fs-3 fw-bold text-dark mb-3"><%= product.priceFormatted %></div>
+
+      <p class="lead text-muted mb-4"><%= product.description %></p>
+
+      <div class="d-flex gap-2 mb-4 flex-wrap">
+        <% if (product.stock > 0) { %>
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+            <i class="bi bi-check-circle me-1"></i>In Stock (<%= product.stock %> available)
+          </span>
+        <% } else { %>
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+            <i class="bi bi-x-circle me-1"></i>Out of Stock
+          </span>
+        <% } %>
+      </div>
+
+      <% if (product.stock > 0) { %>
+        <% if (user) { %>
+          <form method="POST" action="/cart/add/<%= product.id %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="d-flex gap-3 align-items-center mb-3">
+              <div style="width:100px">
+                <label for="qty" class="form-label fw-semibold small">Qty</label>
+                <input type="number" class="form-control" id="qty" name="qty"
+                  value="1" min="1" max="<%= product.stock %>">
+              </div>
+              <div class="mt-4">
+                <button type="submit" class="btn btn-dark btn-lg px-4">
+                  <i class="bi bi-bag-plus me-2"></i>Add to Bag
+                </button>
+              </div>
+            </div>
+          </form>
+        <% } else { %>
+          <a href="/auth/login?next=/catalog/<%= product.slug %>" class="btn btn-dark btn-lg px-4">
+            <i class="bi bi-bag-plus me-2"></i>Sign In to Add to Bag
+          </a>
+        <% } %>
+      <% } %>
+
+      <div class="border rounded-3 p-3 mt-4 bg-light">
+        <div class="row row-cols-2 g-2 text-center small">
+          <div class="col">
+            <i class="bi bi-shield-check text-teal fs-5 d-block mb-1"></i>
+            Certificate of Authenticity
+          </div>
+          <div class="col">
+            <i class="bi bi-arrow-counterclockwise text-teal fs-5 d-block mb-1"></i>
+            Free 30-day Returns
+          </div>
+          <div class="col">
+            <i class="bi bi-truck text-teal fs-5 d-block mb-1"></i>
+            Free Delivery
+          </div>
+          <div class="col">
+            <i class="bi bi-lock text-teal fs-5 d-block mb-1"></i>
+            Secure Payment
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related Products -->
+  <% if (related && related.length) { %>
+  <div class="mt-5 pt-4 border-top">
+    <h3 class="mb-4">You May Also Like</h3>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+      <% related.forEach(rp => { %>
+      <div class="col">
+        <div class="card product-card h-100 shadow-sm border-0">
+          <a href="/catalog/<%= rp.slug %>" class="text-decoration-none text-dark">
+            <div class="product-img-wrap bg-secondary-subtle" style="height:160px">
+              <% if (rp.images && rp.images.length) { %>
+                <img src="<%= rp.images[0] %>" class="card-img-top" alt="<%= rp.title %>" loading="lazy" style="height:160px;object-fit:cover">
+              <% } else { %>
+                <div class="d-flex align-items-center justify-content-center h-100 text-secondary">
+                  <i class="bi bi-gem fs-2"></i>
+                </div>
+              <% } %>
+            </div>
+            <div class="card-body">
+              <h6 class="card-title"><%= rp.title %></h6>
+              <span class="fw-bold"><%= rp.priceFormatted %></span>
+            </div>
+          </a>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+</div>

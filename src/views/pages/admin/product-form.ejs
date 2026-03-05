@@ -1,0 +1,85 @@
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/admin">Admin</a></li>
+      <li class="breadcrumb-item"><a href="/admin/products">Products</a></li>
+      <li class="breadcrumb-item active"><%= product ? 'Edit' : 'New' %></li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <% if (errors && errors.length) { %>
+            <div class="alert alert-danger">
+              <ul class="mb-0 small">
+                <% errors.forEach(e => { %><li><%= e.msg %></li><% }) %>
+              </ul>
+            </div>
+          <% } %>
+
+          <form method="POST"
+            action="<%= product ? `/admin/products/${product.id}?_method=PUT` : '/admin/products' %>"
+            novalidate>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+            <div class="mb-3">
+              <label for="title" class="form-label fw-semibold">Title *</label>
+              <input type="text" class="form-control" id="title" name="title"
+                value="<%= old.title || (product ? product.title : '') %>" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="slug" class="form-label fw-semibold">Slug *</label>
+              <input type="text" class="form-control" id="slug" name="slug"
+                value="<%= old.slug || (product ? product.slug : '') %>"
+                pattern="[a-z0-9-]+" required>
+              <div class="form-text">Lowercase letters, numbers, hyphens only.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label fw-semibold">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3"><%= old.description || (product ? product.description : '') %></textarea>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="price" class="form-label fw-semibold">Price (pence) *</label>
+                <input type="number" class="form-control" id="price" name="price"
+                  value="<%= old.price || (product ? product.price : '') %>" required min="1">
+                <div class="form-text">Enter in minor units (e.g. 9999 = £99.99)</div>
+              </div>
+              <div class="col-md-6">
+                <label for="stock" class="form-label fw-semibold">Stock *</label>
+                <input type="number" class="form-control" id="stock" name="stock"
+                  value="<%= old.stock || (product ? product.stock : 0) %>" required min="0">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="categories" class="form-label fw-semibold">Categories</label>
+              <input type="text" class="form-control" id="categories" name="categories"
+                value="<%= old.categories || (product ? product.categoriesStr : '') %>"
+                placeholder="Rings, Diamonds, Teal Collection">
+              <div class="form-text">Comma-separated list.</div>
+            </div>
+
+            <div class="mb-4 form-check">
+              <input type="checkbox" class="form-check-input" id="featured" name="featured"
+                <%= (old.featured === 'on' || (product && product.featured)) ? 'checked' : '' %>>
+              <label class="form-check-label" for="featured">Featured product</label>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-dark flex-fill fw-semibold">
+                <%= product ? 'Update Product' : 'Create Product' %>
+              </button>
+              <a href="/admin/products" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

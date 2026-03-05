@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: "sqlserver://sqlserver:1433;database=teal_jewellery;user=sa;password=Dev@Password1!;trustServerCertificate=true"
+      SESSION_SECRET: dev-session-secret-min-32-chars!!
+      CSRF_SECRET: dev-csrf-secret-min-32-chars!!!!
+      DEV_SKIP_EMAIL_VERIFY: "true"
+      PAYMENT_PROVIDER: razorpay
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_placeholder}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-placeholder}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: unless-stopped
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Dev@Password1!"
+      MSSQL_PID: Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Dev@Password1!" -Q "SELECT 1" -C || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  sqldata:

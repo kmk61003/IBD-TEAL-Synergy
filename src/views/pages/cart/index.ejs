@@ -1,0 +1,94 @@
+<div class="container py-5">
+  <h1 class="mb-4">Shopping Bag</h1>
+
+  <% if (!cart.items.length) { %>
+    <div class="text-center py-5">
+      <i class="bi bi-bag display-1 text-secondary mb-3 d-block"></i>
+      <h3>Your bag is empty</h3>
+      <p class="text-muted">Discover our curated jewellery collections.</p>
+      <a href="/catalog" class="btn btn-dark mt-2">Browse Collections</a>
+    </div>
+  <% } else { %>
+    <div class="row g-4">
+      <!-- Cart Items -->
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-0">
+            <% cart.items.forEach(item => { %>
+            <div class="d-flex align-items-center gap-3 p-4 border-bottom">
+              <div class="flex-shrink-0" style="width:80px;height:80px;background:#f8f9fa;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                <% if (item.product.images && item.product.images.length) { %>
+                  <img src="<%= item.product.images[0] %>" alt="<%= item.product.title %>"
+                    style="width:100%;height:100%;object-fit:cover">
+                <% } else { %>
+                  <i class="bi bi-gem text-secondary"></i>
+                <% } %>
+              </div>
+              <div class="flex-grow-1">
+                <a href="/catalog/<%= item.product.slug %>" class="text-dark text-decoration-none fw-semibold">
+                  <%= item.product.title %>
+                </a>
+                <% if (item.product.categories && item.product.categories.length) { %>
+                  <div class="small text-muted"><%= item.product.categories[0] %></div>
+                <% } %>
+                <div class="mt-2 d-flex align-items-center gap-2">
+                  <form method="POST" action="/cart/update/<%= item.id %>" class="d-inline">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="input-group input-group-sm" style="width:110px">
+                      <input type="number" class="form-control form-control-sm text-center" name="qty"
+                        value="<%= item.qty %>" min="0" max="<%= item.product.stock %>"
+                        onchange="this.form.submit()">
+                    </div>
+                  </form>
+                  <form method="POST" action="/cart/remove/<%= item.id %>">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" aria-label="Remove item">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <div class="text-end fw-bold">
+                <%= item.lineTotalFormatted %>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title mb-3">Order Summary</h5>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted">Subtotal</span>
+              <span class="fw-semibold"><%= cart.subtotalFormatted %></span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted">Delivery</span>
+              <span class="text-success fw-semibold">Free</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between mb-3">
+              <span class="fw-bold">Total</span>
+              <span class="fw-bold fs-5"><%= cart.subtotalFormatted %></span>
+            </div>
+            <a href="/checkout" class="btn btn-dark w-100 fw-semibold">
+              <i class="bi bi-lock me-2"></i>Proceed to Checkout
+            </a>
+            <a href="/catalog" class="btn btn-outline-secondary w-100 mt-2">Continue Shopping</a>
+
+            <div class="mt-3 text-center">
+              <small class="text-muted">
+                <i class="bi bi-lock-fill me-1"></i>Secure SSL checkout &nbsp;|&nbsp;
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Free returns
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>

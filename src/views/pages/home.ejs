@@ -1,0 +1,102 @@
+<!-- Hero Section -->
+<div class="hero-section">
+  <div class="container py-5">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <p class="text-warning fw-semibold mb-2 small text-uppercase tracking-wide">Curated Fine Jewellery</p>
+        <h1 class="display-4 fw-bold text-white mb-3">Wear Your<br><span class="text-warning">Story</span></h1>
+        <p class="lead text-light mb-4">
+          Handcrafted pieces that capture life's most precious moments.
+          Discover our collections — each one made with certified gemstones and master craftsmanship.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="/catalog" class="btn btn-warning btn-lg px-4 fw-semibold">
+            <i class="bi bi-gem me-2"></i>Shop Collections
+          </a>
+          <a href="/auth/register" class="btn btn-outline-light btn-lg px-4">
+            Create Account
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Featured Products -->
+<% if (featured && featured.length) { %>
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-4">
+      <p class="text-teal fw-semibold small text-uppercase">Editor's Picks</p>
+      <h2 class="display-6 fw-bold">Featured Pieces</h2>
+    </div>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      <% featured.forEach(product => { %>
+      <div class="col">
+        <div class="card product-card h-100 shadow-sm border-0">
+          <div class="product-img-wrap bg-secondary-subtle">
+            <% if (product.images && product.images.length) { %>
+              <img src="<%= product.images[0] %>" class="card-img-top" alt="<%= product.title %>" loading="lazy">
+            <% } else { %>
+              <div class="d-flex align-items-center justify-content-center h-100 text-secondary">
+                <i class="bi bi-gem fs-1"></i>
+              </div>
+            <% } %>
+          </div>
+          <div class="card-body">
+            <% if (product.categories && product.categories.length) { %>
+              <small class="text-teal fw-semibold"><%= product.categories[0] %></small>
+            <% } %>
+            <h5 class="card-title mt-1"><%= product.title %></h5>
+            <p class="card-text text-muted small text-truncate-2"><%= product.description %></p>
+          </div>
+          <div class="card-footer border-0 bg-transparent d-flex justify-content-between align-items-center">
+            <span class="fs-5 fw-bold text-dark"><%= product.priceFormatted %></span>
+            <a href="/catalog/<%= product.slug %>" class="btn btn-dark btn-sm">View Details</a>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <div class="text-center mt-4">
+      <a href="/catalog" class="btn btn-outline-dark px-4">View All Pieces</a>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- Value Props -->
+<section class="py-5">
+  <div class="container">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 text-center">
+      <div class="col">
+        <div class="p-3">
+          <div class="fs-2 mb-2">⬡</div>
+          <h5 class="fw-semibold">Ethically Sourced</h5>
+          <p class="text-muted small">All gemstones are certified conflict-free and sustainably sourced.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3">
+          <div class="fs-2 mb-2">✦</div>
+          <h5 class="fw-semibold">Expert Craftsmanship</h5>
+          <p class="text-muted small">Each piece handcrafted by master jewellers with decades of experience.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3">
+          <div class="fs-2 mb-2">◆</div>
+          <h5 class="fw-semibold">Certificate of Authenticity</h5>
+          <p class="text-muted small">Every purchase includes a signed certificate and lifetime warranty.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3">
+          <div class="fs-2 mb-2">↺</div>
+          <h5 class="fw-semibold">Free 30-Day Returns</h5>
+          <p class="text-muted small">Not in love? Return within 30 days for a full refund.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

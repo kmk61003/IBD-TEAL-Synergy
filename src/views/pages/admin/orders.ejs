@@ -1,0 +1,45 @@
+<div class="container-fluid py-4">
+  <h1 class="mb-4">All Orders</h1>
+
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Provider</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% orders.forEach(order => { %>
+          <tr>
+            <td class="fw-mono">#<%= order.id.slice(0,8).toUpperCase() %></td>
+            <td>
+              <div class="fw-semibold"><%= order.user.name || '—' %></div>
+              <small class="text-muted"><%= order.user.email %></small>
+            </td>
+            <td><%= new Date(order.createdAt).toLocaleDateString('en-GB') %></td>
+            <td><%= order.items.length %></td>
+            <td class="fw-semibold"><%= order.totalFormatted %></td>
+            <td class="text-capitalize"><%= order.paymentProvider || '—' %></td>
+            <td>
+              <% if (order.status === 'PAID') { %>
+                <span class="badge bg-success">Paid</span>
+              <% } else if (order.status === 'FAILED') { %>
+                <span class="badge bg-danger">Failed</span>
+              <% } else { %>
+                <span class="badge bg-warning text-dark">Pending</span>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

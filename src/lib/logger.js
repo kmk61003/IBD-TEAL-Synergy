@@ -1,0 +1,26 @@
+'use strict';
+
+const pino = require('pino');
+
+const logger = pino({
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+  redact: {
+    paths: [
+      'req.headers.authorization',
+      'req.headers.cookie',
+      'req.body.password',
+      'req.body.hashedPassword',
+      '*.email',
+      '*.hashedPassword',
+    ],
+    censor: '[REDACTED]',
+  },
+  ...(process.env.NODE_ENV !== 'production' && {
+    transport: {
+      target: 'pino-pretty',
+      options: { colorize: true, translateTime: 'HH:MM:ss', ignore: 'pid,hostname' },
+    },
+  }),
+});
+
+module.exports = logger;
