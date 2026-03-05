@@ -1,7 +1,7 @@
 # IBD Teal Jewelry — Application Architecture
 
-> Branch: `sqllite`  
-> Stack: **Node.js · Express · sql.js (SQLite in-process) · Vanilla JS / jQuery frontend**
+> Branch: `final-1`  
+> Stack: **Node.js · Express · sql.js (SQLite in-process) · Vanilla JS frontend**
 
 ---
 
@@ -23,6 +23,7 @@
    - [Admin Login](#7-admin-login)
    - [Admin Manage Products](#8-admin-manage-products)
    - [Admin Manage Orders](#9-admin-manage-orders)
+   - [Account Management](#10-account-management)
 8. [Authentication Model](#authentication-model)
 9. [Running the Application](#running-the-application)
 
@@ -30,10 +31,11 @@
 
 ## Overview
 
-IBD Teal Jewelry is a full-stack jewelry e-commerce platform built for the Microsoft Hackathon. It provides:
+IBD Teal Jewelry is a full-stack jewelry e-commerce platform. It provides:
 
-- A **customer-facing storefront** for browsing jewelry, managing a cart, and placing orders.
-- A **mock payment flow** that always succeeds (no external payment gateway).
+- A **customer-facing storefront** for browsing jewelry, managing a cart, placing orders, and tracking purchases.
+- A **dedicated payment page** with multiple mock payment methods (card, UPI, net banking).
+- A **customer account panel** for profile management, order history, and saved items (wishlist).
 - An **admin panel** for managing products, categories, and orders.
 
 The entire application runs as a single Express server that serves static HTML/JS files and a REST API. The database is a **SQLite file** (`db/jewelry.db`) managed in-process via `sql.js` — no Docker or external database service is required.
@@ -46,50 +48,48 @@ The entire application runs as a single Express server that serves static HTML/J
 IBD-TEAL-Synergy/
 ├── db/
 │   ├── jewelry.db          # SQLite database file (auto-created)
-│   ├── schema.sql          # Reference DDL
+│   ├── schema.sql          # Reference DDL (MSSQL dialect)
 │   └── seed.js             # Seed script (admin user + sample data)
 ├── public/                 # Static frontend (HTML + CSS + JS)
-│   ├── index.html          # Shop homepage
+│   ├── index.html          # Homepage (featured products)
+│   ├── shop.html           # Full product listing with filters
 │   ├── pdp.html            # Product detail page
 │   ├── cart.html           # Shopping cart
-│   ├── checkout.html       # Checkout form
+│   ├── checkout.html       # Checkout form (billing & shipping)
+│   ├── payment.html        # Payment method selection & mock processing
+│   ├── order-confirmation.html  # Order success page
+│   ├── track-order.html    # Order tracking by order number
 │   ├── login.html          # Customer login / register
-│   ├── order-confirmation.html
+│   ├── my-account.html     # Account profile, order history, saved items
 │   ├── admin/              # Admin panel pages
 │   │   ├── login.html
 │   │   ├── dashboard.html
 │   │   ├── products.html
 │   │   ├── categories.html
 │   │   └── orders.html
-│   ├── css/style.css
-│   └── js/                 # Client-side JS
-│       ├── api.js          # Fetch wrapper
-│       ├── auth.js         # JWT storage & nav update
-│       ├── cart.js
-│       ├── checkout.js
-│       ├── pdp.js
-│       └── admin/
-│           ├── admin-api.js
-│           └── products.js
+│   ├── css/                # Stylesheets
+│   └── js/                 # Client-side JS modules
 ├── server/
 │   ├── index.js            # Express entry point
 │   ├── config/db.js        # sql.js wrapper (init, prepare, transaction)
 │   ├── middleware/
 │   │   ├── auth.js         # JWT guard (customers)
 │   │   └── adminAuth.js    # JWT guard (admins, isAdmin flag)
-│   └── routes/
-│       ├── authRoutes.js       # POST /register, POST /login
-│       ├── productRoutes.js    # GET /products, GET /products/:id
-│       ├── categoryRoutes.js   # GET /categories
-│       ├── cartRoutes.js       # CRUD /cart
-│       ├── orderRoutes.js      # POST /orders, GET /orders/:orderNumber
-│       ├── paymentRoutes.js    # POST /payment/process
-│       └── admin/
-│           ├── authRoutes.js       # POST /admin/auth/login
-│           ├── productRoutes.js    # CRUD /admin/products + variants
-│           ├── categoryRoutes.js   # CRUD /admin/categories
-│           ├── orderRoutes.js      # GET/PUT /admin/orders
-│           └── dashboardRoutes.js  # GET /admin/dashboard
+│   ├── routes/
+│   │   ├── authRoutes.js       # POST /register, POST /login
+│   │   ├── productRoutes.js    # GET /products, GET /products/:id, recommendations
+│   │   ├── categoryRoutes.js   # GET /categories
+│   │   ├── cartRoutes.js       # CRUD /cart
+│   │   ├── orderRoutes.js      # POST /orders, GET /orders/:orderNumber
+│   │   ├── paymentRoutes.js    # POST /payment/process
+│   │   ├── accountRoutes.js    # GET/PUT /account/profile, orders, saved items
+│   │   └── admin/
+│   │       ├── authRoutes.js       # POST /admin/auth/login
+│   │       ├── productRoutes.js    # CRUD /admin/products + variants
+│   │       ├── categoryRoutes.js   # CRUD /admin/categories
+│   │       ├── orderRoutes.js      # GET/PUT /admin/orders
+│   │       └── dashboardRoutes.js  # GET /admin/dashboard
+│   └── uploads/            # Uploaded product images
 ├── package.json
 └── README.md
 ```
@@ -234,15 +234,31 @@ erDiagram
         TEXT created_at
     }
 
+    saved_item {
+        INTEGER id PK
+        INTEGER customer_id FK
+        INTEGER master_product_id FK
+        TEXT created_at
+    }
+
+    product_view {
+        INTEGER id PK
+        INTEGER master_product_id FK
+        TEXT viewed_at
+    }
+
     master_product ||--o{ lot_product : "has variants"
     master_product ||--o{ product_image : "has images"
     master_product ||--o{ product_category_mapping : "belongs to"
     category ||--o{ product_category_mapping : "contains"
     customer ||--o{ orders : "places"
     customer ||--o{ cart : "owns"
+    customer ||--o{ saved_item : "saves"
     orders ||--o{ order_items : "contains"
     lot_product ||--o{ cart : "added to"
     lot_product ||--o{ order_items : "purchased as"
+    master_product ||--o{ saved_item : "saved as"
+    master_product ||--o{ product_view : "viewed as"
 ```
 
 ---
@@ -261,7 +277,9 @@ erDiagram
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/products` | None | List active products (pagination, category filter, search) |
-| GET | `/api/products/:id` | None | Get product detail with variants, images, categories |
+| GET | `/api/products/:id` | None | Get product detail with variants, images, categories; records a page view |
+| GET | `/api/products/:id/recommendations/bestsellers` | None | Best-selling products in the same categories (last 30 days) |
+| GET | `/api/products/:id/recommendations/similar` | None | Most-viewed products in the same categories (last 30 days) |
 
 ### Categories — `/api/categories`
 
@@ -332,6 +350,20 @@ erDiagram
 |--------|------|------|-------------|
 | GET | `/api/admin/dashboard` | Admin JWT | Aggregated stats + recent orders |
 
+### Customer Account — `/api/account`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/account/profile` | Customer JWT | Get own profile |
+| PUT | `/api/account/profile` | Customer JWT | Update name, phone, address |
+| PUT | `/api/account/password` | Customer JWT | Change password (requires current password) |
+| GET | `/api/account/orders` | Customer JWT | List own orders with item counts |
+| GET | `/api/account/orders/:id` | Customer JWT | Get order detail (own orders only) |
+| GET | `/api/account/saved` | Customer JWT | List saved/wishlisted products |
+| POST | `/api/account/saved` | Customer JWT | Save a product to wishlist |
+| DELETE | `/api/account/saved/:productId` | Customer JWT | Remove from wishlist |
+| GET | `/api/account/saved/check/:productId` | Customer JWT | Check if a product is saved |
+
 ---
 
 ## User Flow Chart
@@ -340,29 +372,33 @@ The diagram below shows every path a user (customer or admin) can take through t
 
 ```mermaid
 flowchart TD
-    A([Visitor arrives at homepage]) --> B[Browse products\n/ filter by category\n/ search]
+    A([Visitor arrives at homepage]) --> B[Browse products\non index.html / shop.html\nfilter by category / search]
     B --> C{Select a product}
-    C --> D[View Product Detail Page]
+    C --> D[View Product Detail Page\npdp.html]
+    D --> REC[View Recommendations\nBest sellers & Similar products]
+    REC --> D
     D --> E{Choose variant\nmetal / size / weight}
-    E --> F[Add to Cart]
+    E --> F[Add to Cart\nPOST /api/cart]
     F --> G{Continue shopping?}
     G -- Yes --> B
-    G -- No --> H[View Cart]
+    G -- No --> H[View Cart\ncart.html]
     H --> I{Update quantities\nor remove items?}
     I -- Yes --> H
     I -- No --> J{Logged in?}
     J -- No --> K{Guest or Login?}
-    K -- Guest --> L[Proceed to Checkout\nas guest]
-    K -- Login --> M[Login / Register]
+    K -- Guest --> L[Proceed to Checkout\ncheckout.html as guest]
+    K -- Login --> M[Login / Register\nlogin.html]
     M --> L
     J -- Yes --> L
     L --> N[Fill Billing &\nShipping Details]
     N --> O[Place Order\nPOST /api/orders]
     O --> P{Cart empty\nor inventory fail?}
     P -- Error --> N
-    P -- Success --> Q[Mock Payment\nPOST /api/payment/process]
-    Q --> R[Order Confirmation Page\nwith Order Number]
-    R --> S([Session ends])
+    P -- Success --> Q[Payment Page\npayment.html\nSelect method: card/UPI/net banking]
+    Q --> R[Process Mock Payment\nPOST /api/payment/process]
+    R --> S[Order Confirmation Page\norder-confirmation.html\nwith Order Number & Transaction ID]
+    S --> T([Continue shopping or\ntrack order])
+    T --> TRACK[Track Order\ntrack-order.html]
 
     %% Auth side-paths
     A2([New visitor]) --> REG[Register\nPOST /api/auth/register]
@@ -372,6 +408,13 @@ flowchart TD
     A3([Returning visitor]) --> LOGIN[Login\nPOST /api/auth/login]
     LOGIN --> JWT2[JWT stored in localStorage]
     JWT2 --> B
+
+    %% Account management
+    JWT2 --> ACC[My Account\nmy-account.html]
+    ACC --> PROF[View & Edit Profile\nGET/PUT /api/account/profile]
+    ACC --> OHISTORY[Order History\nGET /api/account/orders]
+    ACC --> SAVED[Saved Items / Wishlist\nGET /api/account/saved]
+    ACC --> PWD[Change Password\nPUT /api/account/password]
 
     %% Admin path
     ADM([Admin navigates to\n/admin/login.html]) --> ALOGIN[Admin Login\nPOST /api/admin/auth/login]
@@ -525,20 +568,21 @@ sequenceDiagram
     participant Server as Express Server
     participant DB as SQLite DB
 
-    Note over Browser: Order confirmation page loads\nand automatically processes payment
+    Note over Browser: After order is placed, browser redirects\nto payment.html?order=ORD-...
 
-    Browser->>Server: POST /api/payment/process\n{order_number}
+    Browser->>Browser: User selects payment method\n(card / UPI / net banking)
+    Browser->>Server: POST /api/payment/process\n{order_number, payment_method}
     Server->>DB: SELECT id, payment_status FROM orders WHERE order_number = ?
     DB-->>Server: {id, payment_status: "pending"}
 
     alt Already paid
         Server-->>Browser: 400 {error: "Order already paid."}
     else Pending
-        Server->>Server: Generate mock transactionId\n(MOCK-<timestamp>-<random>)
-        Server->>DB: UPDATE orders SET payment_status='paid',\norder_status='confirmed',\nupdated_at=datetime('now') WHERE id = ?
+        Server->>Server: Generate mock transactionId\n(TXN/UPI/NB-<timestamp>-<random>)
+        Server->>DB: UPDATE orders SET payment_status='paid',\norder_status='confirmed',\npayment_method=?,\nupdated_at=datetime('now') WHERE id = ?
         DB-->>Server: ok
         Server-->>Browser: 200 {success: true, transaction_id, order_number}
-        Browser->>Browser: Display order confirmation & transaction ID
+        Browser->>Browser: Redirect to order-confirmation.html\nDisplaying order number & transaction ID
     end
 ```
 
@@ -629,6 +673,45 @@ sequenceDiagram
     Server-->>AdminBrowser: 200 {message: "Order updated."}
 ```
 
+### 10. Account Management
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Server as Express Server
+    participant DB as SQLite DB
+
+    Note over Browser: Every request carries\nAuthorization: Bearer <customerToken>
+
+    Browser->>Server: GET /api/account/profile
+    Server->>Server: auth middleware (verify JWT)
+    Server->>DB: SELECT id, first_name, last_name, email,\nphone_no, address, created_at\nFROM customer WHERE id = ?
+    DB-->>Server: {profile}
+    Server-->>Browser: 200 {profile}
+
+    Browser->>Server: PUT /api/account/profile\n{first_name, last_name, phone_no, address}
+    Server->>Server: auth middleware
+    Server->>DB: UPDATE customer SET first_name=?, ...,\nupdated_at=datetime('now') WHERE id = ?
+    DB-->>Server: ok
+    Server-->>Browser: 200 {message: "Profile updated."}
+
+    Browser->>Server: GET /api/account/orders
+    Server->>Server: auth middleware
+    Server->>DB: SELECT id, order_number, order_total,\norder_status, payment_status, created_at\nFROM orders WHERE customer_id = ?
+    DB-->>Server: [{order}, ...]
+    loop For each order
+        Server->>DB: SELECT COUNT(*) FROM order_items WHERE order_id = ?
+        DB-->>Server: {item_count}
+    end
+    Server-->>Browser: 200 [{order with item_count}, ...]
+
+    Browser->>Server: POST /api/account/saved\n{master_product_id}
+    Server->>Server: auth middleware
+    Server->>DB: INSERT INTO saved_item (customer_id, master_product_id)
+    DB-->>Server: {lastInsertRowid}
+    Server-->>Browser: 201 {message: "Item saved.", id}
+```
+
 ---
 
 ## Authentication Model
@@ -640,6 +723,7 @@ flowchart LR
         C3[POST /api/auth/login]    -->|JWT issued| C2
         C2 -->|Authorization: Bearer token| C4[auth.js middleware\nrequired routes]
         C2 -->|Authorization: Bearer token| C5[optionalAuth\ncart & orders]
+        C4 --> C6[/api/account/*\nProfile, Orders, Saved]
     end
 
     subgraph Admin Auth
@@ -679,7 +763,7 @@ cp .env.example .env   # or create .env manually — see note below
 # → http://localhost:3000
 ```
 
-> **Note:** The sqllite branch does not ship a `.env.example`.  
+> **Note:** The `final-1` branch does not ship a `.env.example`.  
 > Create a `.env` file in the project root with at minimum:
 >
 > ```ini
