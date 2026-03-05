@@ -55,5 +55,24 @@ The test suite covers the following areas of the application:
 | Payment routes | `tests/routes/payment.test.js` | Process payment (missing order, not found, already paid, success with correct transaction ID prefix per payment method) |
 | Account routes | `tests/routes/account.test.js` | Profile get/update, password change (validation, wrong current password, success), order history, saved items (add/remove/check) |
 
-Tests are located in the `tests/` directory and follow the naming convention `*.test.js`.
+### Test folder structure
+
+All test files live inside the **`tests/`** folder at the root of the repository, organised into two sub-folders that mirror the `server/` source layout:
+
+```
+tests/
+├── middleware/
+│   ├── auth.test.js          ← customer JWT middleware
+│   └── adminAuth.test.js     ← admin JWT middleware
+└── routes/
+    ├── auth.test.js          ← POST /api/auth/register  &  /login
+    ├── products.test.js      ← GET  /api/products  (list, detail, recommendations)
+    ├── categories.test.js    ← GET  /api/categories
+    ├── cart.test.js          ← GET/POST/PUT/DELETE  /api/cart
+    ├── orders.test.js        ← POST/GET  /api/orders
+    ├── payment.test.js       ← POST  /api/payment/process
+    └── account.test.js       ← GET/PUT/DELETE  /api/account/*
+```
+
+Tests follow the naming convention `*.test.js`.
 
