@@ -52,7 +52,7 @@ $(document).ready(function () {
                     $('#main-img').attr('src', $(this).data('src'));
                 });
             } else {
-                $('#main-img').attr('src', '/css/placeholder.svg');
+                $('#main-img').attr('src', '/images/default-product.svg');
             }
 
             // Variants
@@ -154,8 +154,95 @@ $(document).ready(function () {
                     $('#add-to-cart-btn').prop('disabled', false).text('Add to Cart');
                 });
             });
+
+            // Save / Wishlist
+            if (Auth.getToken()) {
+                API.get('/api/account/saved/check/' + encodeURIComponent(productId)).then(function (data) {
+                    if (data.saved) {
+                        $('#save-item-btn').html('&#9829; Saved').addClass('btn-saved');
+                    }
+                });
+            }
+
+            $('#save-item-btn').click(function () {
+                if (!Auth.getToken()) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                var btn = $(this);
+                if (btn.hasClass('btn-saved')) {
+                    API.delete('/api/account/saved/' + encodeURIComponent(productId)).then(function () {
+                        btn.html('&#9825; Save').removeClass('btn-saved');
+                    });
+                } else {
+                    API.post('/api/account/saved', { master_product_id: parseInt(productId) }).then(function () {
+                        btn.html('&#9829; Saved').addClass('btn-saved');
+                    });
+                }
+            });
+
+            // Load recommendations
+            loadRecommendations(productId);
         })
         .catch(() => {
             $('#pdp-loading').text('Product not found.');
         });
+
+    function loadRecommendations(pid) {
+        var encodedId = encodeURIComponent(pid);
+
+        API.get('/api/products/' + encodedId + '/recommendations/bestsellers').then(function (items) {
+            if (items && items.length > 0) {
+                renderCarousel('bestsellers-track', 'bestsellers-section', items);
+            }
+        });
+
+        API.get('/api/products/' + encodedId + '/recommendations/similar').then(function (items) {
+            if (items && items.length > 0) {
+                renderCarousel('similar-track', 'similar-section', items);
+            }
+        });
+    }
+
+    function renderCarousel(trackId, sectionId, products) {
+        var track = $('#' + trackId);
+        track.empty();
+
+        products.forEach(function (p) {
+            var imgSrc = p.primary_image || '/images/default-product.svg';
+            var price = p.min_price ? '₹' + Number(p.min_price).toLocaleString() : '';
+            var priceRange = '';
+            if (p.min_price && p.max_price && p.min_price !== p.max_price) {
+                priceRange = '₹' + Number(p.min_price).toLocaleString() + ' – ₹' + Number(p.max_price).toLocaleString();
+            } else {
+                priceRange = price;
+            }
+
+            track.append(
+                '<a href="/pdp.html?id=' + p.id + '" class="carousel-card">' +
+                    '<div class="carousel-card-img"><img src="' + $('<span>').text(imgSrc).html() + '" alt="' + $('<span>').text(p.name).html() + '" /></div>' +
+                    '<div class="carousel-card-info">' +
+                        '<p class="carousel-card-name">' + $('<span>').text(p.name).html() + '</p>' +
+                        '<p class="carousel-card-price">' + priceRange + '</p>' +
+                    '</div>' +
+                '</a>'
+            );
+        });
+
+        $('#' + sectionId).show();
+    }
+
+    // Carousel arrow navigation
+    $(document).on('click', '.carousel-arrow', function () {
+        var trackId = $(this).data('target');
+        var track = $('#' + trackId);
+        var viewport = track.parent();
+        var scrollAmount = viewport.width() * 0.8;
+
+        if ($(this).hasClass('carousel-left')) {
+            viewport.animate({ scrollLeft: viewport.scrollLeft() - scrollAmount }, 300);
+        } else {
+            viewport.animate({ scrollLeft: viewport.scrollLeft() + scrollAmount }, 300);
+        }
+    });
 });

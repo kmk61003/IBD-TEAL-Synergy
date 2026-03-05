@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - IBD Teal Jewelry</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">IBD Teal Jewelry</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/shop.html">Shop</a>
+                <a href="/my-account.html">My Account</a>
+                <a href="/cart.html" class="cart-link">Cart (<span id="cart-count">0</span>)</a>
+                <div id="auth-links">
+                    <a href="/login.html">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="payment-layout">
+            <!-- Payment Form -->
+            <div class="payment-form-section">
+                <h1>Payment</h1>
+                <div class="payment-steps">
+                    <span class="step done">1. Cart</span>
+                    <span class="step done">2. Checkout</span>
+                    <span class="step active">3. Payment</span>
+                    <span class="step">4. Confirmation</span>
+                </div>
+
+                <div id="payment-loading" class="loading">Loading order details...</div>
+
+                <div id="payment-content" style="display:none;">
+                    <!-- Payment Method Tabs -->
+                    <div class="payment-methods">
+                        <button class="payment-tab active" data-method="card">Credit / Debit Card</button>
+                        <button class="payment-tab" data-method="upi">UPI</button>
+                        <button class="payment-tab" data-method="netbanking">Net Banking</button>
+                    </div>
+
+                    <!-- Card Payment -->
+                    <form id="card-form" class="payment-method-form" novalidate>
+                        <div class="form-group">
+                            <label for="card_name">Cardholder Name *</label>
+                            <input type="text" id="card_name" required maxlength="100" pattern="[A-Za-z ]{2,100}" title="Name as on card" placeholder="Name on card" autocomplete="cc-name" />
+                            <span class="field-error"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="card_number">Card Number *</label>
+                            <input type="text" id="card_number" required maxlength="19" pattern="[0-9 ]{13,19}" title="13–16 digit card number" placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
+                            <span class="field-error"></span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="card_expiry">Expiry (MM/YY) *</label>
+                                <input type="text" id="card_expiry" required maxlength="5" pattern="(0[1-9]|1[0-2])\/[0-9]{2}" title="MM/YY format" placeholder="MM/YY" autocomplete="cc-exp" />
+                                <span class="field-error"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="card_cvv">CVV *</label>
+                                <input type="password" id="card_cvv" required maxlength="4" minlength="3" pattern="[0-9]{3,4}" title="3 or 4 digit CVV" placeholder="&#8226;&#8226;&#8226;" autocomplete="cc-csc" />
+                                <span class="field-error"></span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg btn-block" id="pay-card-btn">Pay Now</button>
+                    </form>
+
+                    <!-- UPI Payment -->
+                    <form id="upi-form" class="payment-method-form" style="display:none;" novalidate>
+                        <div class="form-group">
+                            <label for="upi_id">UPI ID *</label>
+                            <input type="text" id="upi_id" required maxlength="50" pattern="[a-zA-Z0-9.\-_]+@[a-zA-Z]+" title="Valid UPI ID (e.g. name@upi)" placeholder="yourname@upi" />
+                            <span class="field-error"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg btn-block" id="pay-upi-btn">Pay via UPI</button>
+                    </form>
+
+                    <!-- Net Banking -->
+                    <form id="netbanking-form" class="payment-method-form" style="display:none;" novalidate>
+                        <div class="form-group">
+                            <label for="bank_select">Select Bank *</label>
+                            <select id="bank_select" class="select-input" required>
+                                <option value="">-- Select Bank --</option>
+                                <option value="sbi">State Bank of India</option>
+                                <option value="hdfc">HDFC Bank</option>
+                                <option value="icici">ICICI Bank</option>
+                                <option value="axis">Axis Bank</option>
+                                <option value="kotak">Kotak Mahindra Bank</option>
+                                <option value="pnb">Punjab National Bank</option>
+                                <option value="bob">Bank of Baroda</option>
+                                <option value="idbi">IDBI Bank</option>
+                            </select>
+                            <span class="field-error"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg btn-block" id="pay-nb-btn">Pay via Net Banking</button>
+                    </form>
+
+                    <div id="payment-error" class="error-message" style="display:none;"></div>
+                </div>
+
+                <div id="payment-processing" class="payment-processing" style="display:none;">
+                    <div class="spinner"></div>
+                    <h2>Processing Payment...</h2>
+                    <p>Please do not close or refresh this page.</p>
+                </div>
+
+                <div id="payment-not-found" class="error-state" style="display:none;">
+                    <p>Order not found or already paid.</p>
+                    <a href="/shop.html" class="btn btn-primary">Go to Shop</a>
+                </div>
+            </div>
+
+            <!-- Order Summary Sidebar -->
+            <div class="payment-summary">
+                <h2>Order Summary</h2>
+                <p class="payment-order-number">Order: <strong id="pay-order-number"></strong></p>
+                <div id="pay-summary-items"></div>
+                <div class="summary-totals">
+                    <div class="summary-row"><span>Subtotal</span><span id="pay-subtotal"></span></div>
+                    <div class="summary-row"><span>Taxes (18% GST)</span><span id="pay-taxes"></span></div>
+                    <div class="summary-row total"><span>Total</span><span id="pay-total"></span></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 IBD Teal Jewelry. All rights reserved.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        $(document).ready(function () {
+            Auth.updateNav();
+
+            var params = new URLSearchParams(window.location.search);
+            var orderNumber = params.get('order');
+
+            if (!orderNumber) {
+                $('#payment-loading').hide();
+                $('#payment-not-found').show();
+                return;
+            }
+
+            // Load order details
+            API.get('/api/orders/' + encodeURIComponent(orderNumber)).then(function (order) {
+                $('#payment-loading').hide();
+
+                if (order.payment_status === 'paid') {
+                    window.location.href = '/order-confirmation.html?order=' + encodeURIComponent(orderNumber);
+                    return;
+                }
+
+                $('#payment-content').show();
+                $('#pay-order-number').text(order.order_number);
+
+                // Populate items
+                var itemsDiv = $('#pay-summary-items');
+                if (order.items) {
+                    order.items.forEach(function (item) {
+                        itemsDiv.append(
+                            '<div class="summary-item">' +
+                                '<span>' + $('<span>').text(item.product_name).html() + ' &times; ' + item.quantity + '</span>' +
+                                '<span>&#8377;' + Number(item.total_price).toLocaleString() + '</span>' +
+                            '</div>'
+                        );
+                    });
+                }
+
+                $('#pay-subtotal').text('\u20B9' + Number(order.subtotal).toLocaleString());
+                $('#pay-taxes').text('\u20B9' + Number(order.taxes).toLocaleString());
+                $('#pay-total').text('\u20B9' + Number(order.order_total).toLocaleString());
+
+                // Bind live validation
+                Validate.bindLiveValidation('#card-form');
+                Validate.bindLiveValidation('#upi-form');
+                Validate.bindLiveValidation('#netbanking-form');
+            }).catch(function () {
+                $('#payment-loading').hide();
+                $('#payment-not-found').show();
+            });
+
+            // Tab switching
+            $(document).on('click', '.payment-tab', function () {
+                var method = $(this).data('method');
+                $('.payment-tab').removeClass('active');
+                $(this).addClass('active');
+                $('.payment-method-form').hide();
+                if (method === 'card') $('#card-form').show();
+                else if (method === 'upi') $('#upi-form').show();
+                else if (method === 'netbanking') $('#netbanking-form').show();
+            });
+
+            // Card number formatting
+            $('#card_number').on('input', function () {
+                var val = $(this).val().replace(/\D/g, '').substring(0, 16);
+                var formatted = val.replace(/(.{4})/g, '$1 ').trim();
+                $(this).val(formatted);
+            });
+
+            // Expiry formatting
+            $('#card_expiry').on('input', function () {
+                var val = $(this).val().replace(/\D/g, '').substring(0, 4);
+                if (val.length >= 3) val = val.substring(0, 2) + '/' + val.substring(2);
+                $(this).val(val);
+            });
+
+            // Card form submit
+            $('#card-form').submit(function (e) {
+                e.preventDefault();
+                if (!Validate.validateForm('#card-form')) return;
+
+                // Luhn check
+                var cardNum = $('#card_number').val();
+                if (!Validate.luhn(cardNum)) {
+                    Validate.showError($('#card_number')[0], 'Invalid card number.');
+                    return;
+                }
+
+                // Expiry check
+                var expiry = $('#card_expiry').val().trim();
+                if (!Validate.isExpiryValid(expiry)) {
+                    Validate.showError($('#card_expiry')[0], 'Card is expired or date is invalid.');
+                    return;
+                }
+
+                processPayment('card');
+            });
+
+            // UPI form submit
+            $('#upi-form').submit(function (e) {
+                e.preventDefault();
+                if (!Validate.validateForm('#upi-form')) return;
+                processPayment('upi');
+            });
+
+            // Net Banking form submit
+            $('#netbanking-form').submit(function (e) {
+                e.preventDefault();
+                if (!Validate.validateForm('#netbanking-form')) return;
+                processPayment('netbanking');
+            });
+
+            function processPayment(method) {
+                $('#payment-content').hide();
+                $('#payment-processing').show();
+                $('#payment-error').hide();
+
+                var paymentData = {
+                    order_number: orderNumber,
+                    payment_method: method
+                };
+
+                if (method === 'card') {
+                    paymentData.card_last4 = $('#card_number').val().replace(/\s/g, '').slice(-4);
+                } else if (method === 'upi') {
+                    paymentData.upi_id = $('#upi_id').val();
+                } else if (method === 'netbanking') {
+                    paymentData.bank = $('#bank_select').val();
+                }
+
+                // Simulate processing delay for realism
+                setTimeout(function () {
+                    API.post('/api/payment/process', paymentData).then(function (result) {
+                        window.location.href = '/order-confirmation.html?order=' + encodeURIComponent(orderNumber);
+                    }).catch(function (err) {
+                        $('#payment-processing').hide();
+                        $('#payment-content').show();
+                        var msg = (err.responseJSON && err.responseJSON.error) || 'Payment failed. Please try again.';
+                        $('#payment-error').text(msg).show();
+                    });
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -11,7 +11,9 @@
         <div class="nav-container">
             <a href="/" class="nav-logo">IBD Teal Jewelry</a>
             <div class="nav-links">
-                <a href="/">Shop</a>
+                <a href="/">Home</a>
+                <a href="/shop.html">Shop</a>
+                <a href="/my-account.html">My Account</a>
                 <a href="/cart.html" class="cart-link">Cart (<span id="cart-count">0</span>)</a>
                 <div id="auth-links">
                     <a href="/login.html">Login</a>
@@ -68,10 +70,33 @@
                         <button id="qty-plus" class="btn btn-sm">+</button>
                     </div>
                     <button id="add-to-cart-btn" class="btn btn-primary btn-lg">Add to Cart</button>
+                    <button id="save-item-btn" class="btn btn-lg" title="Save to wishlist">♡ Save</button>
                 </div>
                 <div id="cart-message" class="cart-message"></div>
             </div>
         </div>
+        <!-- Recommendations -->
+        <section class="recommendation-section" id="bestsellers-section" style="display:none;">
+            <h2 class="recommendation-title">Best Sellers</h2>
+            <div class="carousel-wrapper">
+                <button class="carousel-arrow carousel-left" data-target="bestsellers-track">&#8249;</button>
+                <div class="carousel-viewport">
+                    <div class="carousel-track" id="bestsellers-track"></div>
+                </div>
+                <button class="carousel-arrow carousel-right" data-target="bestsellers-track">&#8250;</button>
+            </div>
+        </section>
+
+        <section class="recommendation-section" id="similar-section" style="display:none;">
+            <h2 class="recommendation-title">Similar Products</h2>
+            <div class="carousel-wrapper">
+                <button class="carousel-arrow carousel-left" data-target="similar-track">&#8249;</button>
+                <div class="carousel-viewport">
+                    <div class="carousel-track" id="similar-track"></div>
+                </div>
+                <button class="carousel-arrow carousel-right" data-target="similar-track">&#8250;</button>
+            </div>
+        </section>
     </main>
 
     <footer class="footer">

@@ -92,7 +92,7 @@ function loadProducts(page) {
         tbody.empty();
 
         data.products.forEach(p => {
-            const img = p.primary_image || '/css/placeholder.svg';
+            const img = p.primary_image || '/images/default-product.svg';
             tbody.append(`
                 <tr>
                     <td><img src="${img}" alt="" class="table-thumb" /></td>

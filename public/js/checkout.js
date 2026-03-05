@@ -2,6 +2,9 @@
 $(document).ready(function () {
     Auth.updateNav();
 
+    // Live validation on checkout form
+    Validate.bindLiveValidation('#checkout-form');
+
     // Load cart summary
     API.get('/api/cart').then(data => {
         if (!data.items || data.items.length === 0) {
@@ -49,9 +52,22 @@ $(document).ready(function () {
     $('#checkout-form').submit(function (e) {
         e.preventDefault();
         $('#checkout-error').hide();
-        $('#place-order-btn').prop('disabled', true).text('Placing Order...');
 
-        const sameAsBilling = $('#same-as-billing').is(':checked');
+        // Validate billing fields
+        if (!Validate.validateForm('#checkout-form')) return;
+
+        // Validate shipping if different from billing
+        var sameAsBilling = $('#same-as-billing').is(':checked');
+        if (!sameAsBilling) {
+            var shipValid = true;
+            $('#shipping-section input').each(function() {
+                $(this).prop('required', true);
+                if (!Validate.validateField(this)) shipValid = false;
+            });
+            if (!shipValid) return;
+        }
+
+        $('#place-order-btn').prop('disabled', true).text('Placing Order...');
 
         const orderData = {
             bill_fname: $('#bill_fname').val(),
@@ -74,19 +90,16 @@ $(document).ready(function () {
             orderData.guest_email = orderData.bill_email;
         }
 
-        // Step 1: Place order
+        // Place order then redirect to payment page
         API.post('/api/orders', orderData)
             .then(orderResult => {
-                // Step 2: Process mock payment
-                return API.post('/api/payment/process', { order_number: orderResult.order_number })
-                    .then(() => orderResult);
+                window.location.href = '/payment.html?order=' + encodeURIComponent(orderResult.order_number);
             })
             .then(orderResult => {
-                // Redirect to confirmation
-                window.location.href = '/order-confirmation.html?order=' + encodeURIComponent(orderResult.order_number);
+                window.location.href = '/payment.html?order=' + encodeURIComponent(orderResult.order_number);
             })
             .catch(err => {
-                const msg = err.responseJSON?.error || 'Failed to place order. Please try again.';
+                const msg = (err.responseJSON && err.responseJSON.error) || 'Failed to place order. Please try again.';
                 $('#checkout-error').text(msg).show();
                 $('#place-order-btn').prop('disabled', false).text('Place Order');
             });

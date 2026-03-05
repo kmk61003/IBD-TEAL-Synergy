@@ -11,7 +11,9 @@
         <div class="nav-container">
             <a href="/" class="nav-logo">IBD Teal Jewelry</a>
             <div class="nav-links">
-                <a href="/">Shop</a>
+                <a href="/">Home</a>
+                <a href="/shop.html">Shop</a>
+                <a href="/my-account.html">My Account</a>
                 <a href="/cart.html" class="cart-link">Cart (<span id="cart-count">0</span>)</a>
                 <div id="auth-links">
                     <a href="/login.html">Login</a>
@@ -66,7 +68,8 @@
             </div>
 
             <div class="confirmation-actions">
-                <a href="/" class="btn btn-primary">Continue Shopping</a>
+                <a href="/shop.html" class="btn btn-primary">Continue Shopping</a>
+                <a href="#" id="track-order-link" class="btn">Track Order</a>
             </div>
         </div>
 
@@ -134,6 +137,8 @@
                     $('#conf-subtotal').text('₹' + Number(order.subtotal).toLocaleString());
                     $('#conf-taxes').text('₹' + Number(order.taxes).toLocaleString());
                     $('#conf-total').text('₹' + Number(order.order_total).toLocaleString());
+
+                    $('#track-order-link').attr('href', '/track-order.html?order=' + encodeURIComponent(order.order_number));
                 })
                 .catch(() => {
                     $('#confirmation-loading').hide();

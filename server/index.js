@@ -32,6 +32,7 @@ db.init().then(function() {
     app.use('/api/cart', require('./routes/cartRoutes'));
     app.use('/api/orders', require('./routes/orderRoutes'));
     app.use('/api/payment', require('./routes/paymentRoutes'));
+    app.use('/api/account', require('./routes/accountRoutes'));
 
     // Admin Routes
     app.use('/api/admin/auth', require('./routes/admin/authRoutes'));
@@ -40,7 +41,7 @@ db.init().then(function() {
     app.use('/api/admin/orders', require('./routes/admin/orderRoutes'));
     app.use('/api/admin/dashboard', require('./routes/admin/dashboardRoutes'));
 
-    // SPA fallback — serve index.html for non-API, non-static routes
+    // SPA fallback — serve homepage for non-API, non-static routes
     app.get('*', function(req, res) {
         if (!req.path.startsWith('/api/')) {
             res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));

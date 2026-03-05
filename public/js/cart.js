@@ -20,7 +20,7 @@ $(document).ready(function () {
             tbody.empty();
 
             data.items.forEach(item => {
-                const img = item.image_path || '/css/placeholder.svg';
+                const img = item.image_path || '/images/default-product.svg';
                 const price = item.effective_price;
 
                 tbody.append(`

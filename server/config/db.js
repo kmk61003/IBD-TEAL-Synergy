@@ -125,6 +125,18 @@ var SCHEMA = "\
     quantity INTEGER NOT NULL DEFAULT 1 CHECK(quantity > 0),\
     created_at TEXT NOT NULL DEFAULT (datetime('now'))\
   );\
+  CREATE TABLE IF NOT EXISTS saved_item (\
+    id INTEGER PRIMARY KEY AUTOINCREMENT,\
+    customer_id INTEGER NOT NULL REFERENCES customer(id) ON DELETE CASCADE,\
+    master_product_id INTEGER NOT NULL REFERENCES master_product(id) ON DELETE CASCADE,\
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),\
+    UNIQUE(customer_id, master_product_id)\
+  );\
+  CREATE TABLE IF NOT EXISTS product_view (\
+    id INTEGER PRIMARY KEY AUTOINCREMENT,\
+    master_product_id INTEGER NOT NULL REFERENCES master_product(id) ON DELETE CASCADE,\
+    viewed_at TEXT NOT NULL DEFAULT (datetime('now'))\
+  );\
 ";
 
 var wrapper = {

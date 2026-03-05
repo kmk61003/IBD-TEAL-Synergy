@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IBD Teal Jewelry</title>
+    <title>IBD Teal Jewelry — Exquisite Handcrafted Jewelry</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,7 +11,9 @@
         <div class="nav-container">
             <a href="/" class="nav-logo">IBD Teal Jewelry</a>
             <div class="nav-links">
-                <a href="/">Shop</a>
+                <a href="/" class="active">Home</a>
+                <a href="/shop.html">Shop</a>
+                <a href="/my-account.html">My Account</a>
                 <a href="/cart.html" class="cart-link">Cart (<span id="cart-count">0</span>)</a>
                 <div id="auth-links">
                     <a href="/login.html">Login</a>
@@ -20,31 +22,66 @@
         </div>
     </nav>
 
-    <main class="container">
-        <div class="shop-layout">
-            <!-- Category Sidebar -->
-            <aside class="sidebar">
-                <h3>Categories</h3>
-                <ul id="category-list" class="category-list">
-                    <li><a href="#" class="category-item active" data-slug="">All Products</a></li>
-                </ul>
-            </aside>
-
-            <!-- Product Grid -->
-            <section class="product-section">
-                <div class="search-bar">
-                    <input type="text" id="search-input" placeholder="Search jewelry..." />
-                    <button id="search-btn" class="btn">Search</button>
-                </div>
-
-                <div id="product-grid" class="product-grid">
-                    <!-- Products loaded via JS -->
-                </div>
-
-                <div id="pagination" class="pagination"></div>
-            </section>
+    <!-- Hero Banner -->
+    <section class="hero">
+        <div class="hero-overlay">
+            <div class="hero-content">
+                <h1>Discover Timeless Elegance</h1>
+                <p>Handcrafted jewelry that tells your unique story. Explore our curated collection of rings, necklaces, earrings, bracelets, and more.</p>
+                <a href="/shop.html" class="btn btn-primary btn-lg">Shop Now</a>
+            </div>
         </div>
-    </main>
+    </section>
+
+    <!-- Featured Categories -->
+    <section class="home-section">
+        <div class="container">
+            <h2 class="section-title">Shop by Category</h2>
+            <div id="home-categories" class="home-category-grid">
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="home-section home-section-alt">
+        <div class="container">
+            <h2 class="section-title">Featured Products</h2>
+            <div id="home-products" class="product-grid">
+            </div>
+            <div class="section-cta">
+                <a href="/shop.html" class="btn btn-primary">View All Products</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Us -->
+    <section class="home-section">
+        <div class="container">
+            <h2 class="section-title">Why Choose IBD Teal</h2>
+            <div class="usp-grid">
+                <div class="usp-card">
+                    <div class="usp-icon">&#10024;</div>
+                    <h3>Handcrafted Quality</h3>
+                    <p>Every piece is meticulously crafted by skilled artisans using premium materials.</p>
+                </div>
+                <div class="usp-card">
+                    <div class="usp-icon">&#128274;</div>
+                    <h3>Secure Payments</h3>
+                    <p>Shop with confidence using our encrypted and secure payment gateway.</p>
+                </div>
+                <div class="usp-card">
+                    <div class="usp-icon">&#128666;</div>
+                    <h3>Free Shipping</h3>
+                    <p>Enjoy free insured shipping on all orders above &#8377;5,000.</p>
+                </div>
+                <div class="usp-card">
+                    <div class="usp-icon">&#128257;</div>
+                    <h3>Easy Returns</h3>
+                    <p>Not satisfied? Return within 30 days for a full refund, no questions asked.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <footer class="footer">
         <p>&copy; 2026 IBD Teal Jewelry. All rights reserved.</p>
@@ -54,94 +91,44 @@
     <script src="/js/api.js"></script>
     <script src="/js/auth.js"></script>
     <script>
-        let currentCategory = '';
-        let currentPage = 1;
-        let currentSearch = '';
-
-        function loadCategories() {
-            API.get('/api/categories').then(categories => {
-                const list = $('#category-list');
-                categories.forEach(cat => {
-                    list.append(`<li><a href="#" class="category-item" data-slug="${cat.slug}">${cat.name}</a></li>`);
-                });
-            });
-        }
-
-        function loadProducts(page, category, search) {
-            let url = `/api/products?page=${page}&limit=12`;
-            if (category) url += `&category=${encodeURIComponent(category)}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
-
-            API.get(url).then(data => {
-                const grid = $('#product-grid');
-                grid.empty();
-
-                if (data.products.length === 0) {
-                    grid.html('<p class="no-results">No products found.</p>');
-                    return;
-                }
-
-                data.products.forEach(p => {
-                    const img = p.primary_image || '/css/placeholder.svg';
-                    const price = p.min_price ? `₹${Number(p.min_price).toLocaleString()}` : 'Price on request';
-                    const priceRange = p.max_price && p.max_price !== p.min_price
-                        ? ` - ₹${Number(p.max_price).toLocaleString()}`
-                        : '';
-
-                    grid.append(`
-                        <div class="product-card" onclick="window.location='/pdp.html?id=${p.id}'">
-                            <div class="product-image">
-                                <img src="${img}" alt="${$('<div>').text(p.name).html()}" />
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">${$('<div>').text(p.name).html()}</h3>
-                                <p class="product-desc">${$('<div>').text(p.short_description || '').html()}</p>
-                                <p class="product-price">${price}${priceRange}</p>
-                                <p class="product-categories">${$('<div>').text(p.categories || '').html()}</p>
-                            </div>
-                        </div>
-                    `);
-                });
-
-                // Pagination
-                const pg = data.pagination;
-                const pagDiv = $('#pagination');
-                pagDiv.empty();
-                if (pg.totalPages > 1) {
-                    if (pg.page > 1) pagDiv.append(`<button class="btn btn-sm" onclick="goPage(${pg.page - 1})">Prev</button>`);
-                    pagDiv.append(`<span class="page-info">Page ${pg.page} of ${pg.totalPages}</span>`);
-                    if (pg.page < pg.totalPages) pagDiv.append(`<button class="btn btn-sm" onclick="goPage(${pg.page + 1})">Next</button>`);
-                }
-            });
-        }
-
-        function goPage(page) {
-            currentPage = page;
-            loadProducts(currentPage, currentCategory, currentSearch);
-        }
-
         $(document).ready(function () {
-            loadCategories();
-            loadProducts(1, '', '');
             Auth.updateNav();
 
-            $(document).on('click', '.category-item', function (e) {
-                e.preventDefault();
-                $('.category-item').removeClass('active');
-                $(this).addClass('active');
-                currentCategory = $(this).data('slug');
-                currentPage = 1;
-                loadProducts(currentPage, currentCategory, currentSearch);
+            // Load categories
+            API.get('/api/categories').then(function (categories) {
+                var grid = $('#home-categories');
+                var colors = ['#0d6e6e', '#1a8f8f', '#2c3e50', '#8e44ad', '#e67e22'];
+                categories.forEach(function (cat, i) {
+                    grid.append(
+                        '<a href="/shop.html?category=' + encodeURIComponent(cat.slug) + '" class="home-category-card" style="background:' + colors[i % colors.length] + '">' +
+                            '<h3>' + $('<span>').text(cat.name).html() + '</h3>' +
+                        '</a>'
+                    );
+                });
             });
 
-            $('#search-btn').click(function () {
-                currentSearch = $('#search-input').val().trim();
-                currentPage = 1;
-                loadProducts(currentPage, currentCategory, currentSearch);
-            });
+            // Load featured products (first 8)
+            API.get('/api/products?page=1&limit=8').then(function (data) {
+                var grid = $('#home-products');
+                data.products.forEach(function (p) {
+                    var img = p.primary_image || '/images/default-product.svg';
+                    var price = p.min_price ? '\u20B9' + Number(p.min_price).toLocaleString() : 'Price on request';
+                    var priceRange = p.max_price && p.max_price !== p.min_price
+                        ? ' - \u20B9' + Number(p.max_price).toLocaleString()
+                        : '';
 
-            $('#search-input').keypress(function (e) {
-                if (e.which === 13) $('#search-btn').click();
+                    grid.append(
+                        '<div class="product-card">' +
+                            '<div class="product-image" onclick="window.location=\'/pdp.html?id=' + p.id + '\'">' +
+                                '<img src="' + img + '" alt="' + $('<span>').text(p.name).html() + '" />' +
+                            '</div>' +
+                            '<div class="product-info" onclick="window.location=\'/pdp.html?id=' + p.id + '\'">' +
+                                '<h3 class="product-name">' + $('<span>').text(p.name).html() + '</h3>' +
+                                '<p class="product-price">' + price + priceRange + '</p>' +
+                            '</div>' +
+                        '</div>'
+                    );
+                });
             });
         });
     </script>

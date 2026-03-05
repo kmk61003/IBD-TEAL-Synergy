@@ -5,7 +5,7 @@ const db = require('../config/db');
 // POST /api/payment/process
 router.post('/process', (req, res) => {
     try {
-        const { order_number } = req.body;
+        const { order_number, payment_method } = req.body;
 
         if (!order_number) {
             return res.status(400).json({ error: 'order_number is required.' });
@@ -21,15 +21,20 @@ router.post('/process', (req, res) => {
             return res.status(400).json({ error: 'Order already paid.' });
         }
 
-        // Mock payment — always succeeds
-        const transactionId = 'MOCK-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+        // Simulated payment gateway processing
+        var method = payment_method || 'card';
+        var prefix = method === 'upi' ? 'UPI' : method === 'netbanking' ? 'NB' : 'TXN';
+        var transactionId = prefix + '-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
 
-        db.prepare("UPDATE orders SET payment_status = 'paid', order_status = 'confirmed', payment_method = 'mock_payment', updated_at = datetime('now') WHERE id = ?").run(order.id);
+        db.prepare(
+            "UPDATE orders SET payment_status = 'paid', order_status = 'confirmed', payment_method = ?, updated_at = datetime('now') WHERE id = ?"
+        ).run(method, order.id);
 
         res.json({
             success: true,
             message: 'Payment processed successfully.',
             transaction_id: transactionId,
+            payment_method: method,
             order_number: order_number
         });
     } catch (err) {

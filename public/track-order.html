@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Order - IBD Teal Jewelry</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">IBD Teal Jewelry</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/shop.html">Shop</a>
+                <a href="/my-account.html">My Account</a>
+                <a href="/cart.html" class="cart-link">Cart (<span id="cart-count">0</span>)</a>
+                <div id="auth-links">
+                    <a href="/login.html">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>Track Your Order</h1>
+
+        <!-- Search Form -->
+        <div class="tracking-search">
+            <form id="track-form">
+                <div class="tracking-search-row">
+                    <input type="text" id="track-input" placeholder="Enter your order number (e.g. ORD-20260305-1234)" required maxlength="30" />
+                    <button type="submit" class="btn btn-primary">Track Order</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="track-error" class="error-message" style="display:none;"></div>
+        <div id="track-loading" class="loading" style="display:none;">Looking up your order...</div>
+
+        <!-- Order Tracking Result -->
+        <div id="track-result" style="display:none;">
+            <!-- Status Timeline -->
+            <div class="tracking-status-section">
+                <h2>Order <span id="track-order-number"></span></h2>
+                <p class="tracking-date">Placed on <span id="track-date"></span></p>
+
+                <div class="tracking-timeline">
+                    <div class="timeline-step" data-step="placed">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-label">Order Placed</div>
+                    </div>
+                    <div class="timeline-step" data-step="confirmed">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-label">Confirmed</div>
+                    </div>
+                    <div class="timeline-step" data-step="shipped">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-label">Shipped</div>
+                    </div>
+                    <div class="timeline-step" data-step="delivered">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-label">Delivered</div>
+                    </div>
+                </div>
+
+                <div id="track-cancelled" class="tracking-cancelled" style="display:none;">
+                    <span class="badge badge-cancelled">Cancelled</span>
+                    <p>This order has been cancelled.</p>
+                </div>
+            </div>
+
+            <!-- Order Details -->
+            <div class="tracking-details">
+                <div class="tracking-info-grid">
+                    <div class="tracking-info-card">
+                        <h3>Payment</h3>
+                        <p>Status: <span id="track-payment-status" class="badge"></span></p>
+                        <p>Method: <span id="track-payment-method"></span></p>
+                    </div>
+                    <div class="tracking-info-card">
+                        <h3>Shipping Address</h3>
+                        <p id="track-ship-address"></p>
+                    </div>
+                    <div class="tracking-info-card">
+                        <h3>Billing Address</h3>
+                        <p id="track-bill-address"></p>
+                    </div>
+                </div>
+
+                <h3>Order Items</h3>
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>SKU</th>
+                            <th>Metal</th>
+                            <th>Size</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="track-items"></tbody>
+                </table>
+
+                <div class="cart-summary">
+                    <div class="summary-totals">
+                        <div class="summary-row"><span>Subtotal</span><span id="track-subtotal"></span></div>
+                        <div class="summary-row"><span>Taxes (GST)</span><span id="track-taxes"></span></div>
+                        <div class="summary-row total"><span>Total</span><span id="track-total"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 IBD Teal Jewelry. All rights reserved.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        $(document).ready(function () {
+            Auth.updateNav();
+
+            // Pre-fill from URL
+            var params = new URLSearchParams(window.location.search);
+            var orderParam = params.get('order');
+            if (orderParam) {
+                $('#track-input').val(orderParam);
+                lookupOrder(orderParam);
+            }
+
+            $('#track-form').submit(function (e) {
+                e.preventDefault();
+                var orderNumber = $('#track-input').val().trim();
+                if (!orderNumber) return;
+                lookupOrder(orderNumber);
+            });
+
+            function lookupOrder(orderNumber) {
+                $('#track-error').hide();
+                $('#track-result').hide();
+                $('#track-loading').show();
+
+                API.get('/api/orders/' + encodeURIComponent(orderNumber)).then(function (order) {
+                    $('#track-loading').hide();
+                    renderTracking(order);
+                }).catch(function (err) {
+                    $('#track-loading').hide();
+                    var msg = (err.responseJSON && err.responseJSON.error) || 'Order not found. Please check the order number and try again.';
+                    $('#track-error').text(msg).show();
+                });
+            }
+
+            function renderTracking(order) {
+                $('#track-result').show();
+
+                // Order header
+                $('#track-order-number').text(order.order_number);
+                $('#track-date').text(new Date(order.created_at).toLocaleDateString('en-IN', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                }));
+
+                // Timeline
+                var statuses = ['placed', 'confirmed', 'shipped', 'delivered'];
+                var currentStatus = order.order_status;
+
+                if (currentStatus === 'cancelled') {
+                    $('.tracking-timeline').hide();
+                    $('#track-cancelled').show();
+                } else {
+                    $('.tracking-timeline').show();
+                    $('#track-cancelled').hide();
+                    var reached = false;
+                    for (var i = statuses.length - 1; i >= 0; i--) {
+                        if (statuses[i] === currentStatus) reached = true;
+                    }
+
+                    var activeIndex = statuses.indexOf(currentStatus);
+                    $('.timeline-step').each(function (idx) {
+                        $(this).removeClass('completed active');
+                        if (idx < activeIndex) {
+                            $(this).addClass('completed');
+                        } else if (idx === activeIndex) {
+                            $(this).addClass('active');
+                        }
+                    });
+                }
+
+                // Payment info
+                var payBadge = $('#track-payment-status');
+                payBadge.text(order.payment_status).attr('class', 'badge badge-' + order.payment_status);
+                $('#track-payment-method').text(order.payment_method || '—');
+
+                // Addresses
+                $('#track-ship-address').html(
+                    $('<span>').text(order.ship_fname + ' ' + order.ship_lname).html() + '<br>' +
+                    $('<span>').text(order.ship_address1).html() + '<br>' +
+                    $('<span>').text(order.ship_pincode + ', ' + order.ship_country_code).html() + '<br>' +
+                    $('<span>').text(order.ship_phone).html()
+                );
+                $('#track-bill-address').html(
+                    $('<span>').text(order.bill_fname + ' ' + order.bill_lname).html() + '<br>' +
+                    $('<span>').text(order.bill_address1).html() + '<br>' +
+                    $('<span>').text(order.bill_pincode + ', ' + order.bill_country_code).html() + '<br>' +
+                    $('<span>').text(order.bill_phone).html()
+                );
+
+                // Items table
+                var tbody = $('#track-items');
+                tbody.empty();
+                if (order.items) {
+                    order.items.forEach(function (item) {
+                        tbody.append(
+                            '<tr>' +
+                                '<td>' + $('<span>').text(item.product_name).html() + '</td>' +
+                                '<td>' + $('<span>').text(item.sku).html() + '</td>' +
+                                '<td>' + $('<span>').text(item.metal || '\u2014').html() + '</td>' +
+                                '<td>' + $('<span>').text(item.size || '\u2014').html() + '</td>' +
+                                '<td>' + item.quantity + '</td>' +
+                                '<td>\u20B9' + Number(item.unit_price).toLocaleString() + '</td>' +
+                                '<td>\u20B9' + Number(item.total_price).toLocaleString() + '</td>' +
+                            '</tr>'
+                        );
+                    });
+                }
+
+                // Totals
+                $('#track-subtotal').text('\u20B9' + Number(order.subtotal).toLocaleString());
+                $('#track-taxes').text('\u20B9' + Number(order.taxes).toLocaleString());
+                $('#track-total').text('\u20B9' + Number(order.order_total).toLocaleString());
+            }
+        });
+    </script>
+</body>
+</html>

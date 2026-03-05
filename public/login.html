@@ -11,7 +11,9 @@
         <div class="nav-container">
             <a href="/" class="nav-logo">IBD Teal Jewelry</a>
             <div class="nav-links">
-                <a href="/">Shop</a>
+                <a href="/">Home</a>
+                <a href="/shop.html">Shop</a>
+                <a href="/my-account.html">My Account</a>
                 <a href="/cart.html" class="cart-link">Cart (<span id="cart-count">0</span>)</a>
                 <div id="auth-links">
                     <a href="/login.html">Login</a>
@@ -30,14 +32,16 @@
             <!-- Login Form -->
             <div id="login-tab" class="auth-form">
                 <h2>Login</h2>
-                <form id="login-form">
+                <form id="login-form" novalidate>
                     <div class="form-group">
-                        <label for="login-email">Email</label>
-                        <input type="email" id="login-email" required />
+                        <label for="login-email">Email *</label>
+                        <input type="email" id="login-email" required autocomplete="email" maxlength="100" placeholder="you@example.com" />
+                        <span class="field-error"></span>
                     </div>
                     <div class="form-group">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" required />
+                        <label for="login-password">Password *</label>
+                        <input type="password" id="login-password" required autocomplete="current-password" minlength="6" maxlength="128" placeholder="Enter your password" />
+                        <span class="field-error"></span>
                     </div>
                     <div id="login-error" class="error-message" style="display:none;"></div>
                     <button type="submit" class="btn btn-primary btn-block">Login</button>
@@ -47,28 +51,33 @@
             <!-- Register Form -->
             <div id="register-tab" class="auth-form" style="display:none;">
                 <h2>Create Account</h2>
-                <form id="register-form">
+                <form id="register-form" novalidate>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="reg-fname">First Name *</label>
-                            <input type="text" id="reg-fname" required />
+                            <input type="text" id="reg-fname" required autocomplete="given-name" maxlength="50" pattern="[A-Za-z ]{1,50}" title="Letters and spaces only" placeholder="John" />
+                            <span class="field-error"></span>
                         </div>
                         <div class="form-group">
                             <label for="reg-lname">Last Name</label>
-                            <input type="text" id="reg-lname" />
+                            <input type="text" id="reg-lname" autocomplete="family-name" maxlength="50" pattern="[A-Za-z ]{0,50}" title="Letters and spaces only" placeholder="Doe" />
+                            <span class="field-error"></span>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="reg-email">Email *</label>
-                        <input type="email" id="reg-email" required />
+                        <input type="email" id="reg-email" required autocomplete="email" maxlength="100" placeholder="you@example.com" />
+                        <span class="field-error"></span>
                     </div>
                     <div class="form-group">
                         <label for="reg-phone">Phone</label>
-                        <input type="tel" id="reg-phone" />
+                        <input type="tel" id="reg-phone" autocomplete="tel" maxlength="15" pattern="[0-9+\-\s]{0,15}" title="Phone number (digits, +, -, spaces)" placeholder="+91 9876543210" />
+                        <span class="field-error"></span>
                     </div>
                     <div class="form-group">
                         <label for="reg-password">Password * (min 6 characters)</label>
-                        <input type="password" id="reg-password" minlength="6" required />
+                        <input type="password" id="reg-password" minlength="6" maxlength="128" required autocomplete="new-password" placeholder="Min 6 characters" />
+                        <span class="field-error"></span>
                     </div>
                     <div id="register-error" class="error-message" style="display:none;"></div>
                     <button type="submit" class="btn btn-primary btn-block">Create Account</button>
@@ -94,6 +103,10 @@
                 return;
             }
 
+            // Live validation
+            Validate.bindLiveValidation('#login-form');
+            Validate.bindLiveValidation('#register-form');
+
             // Tab switching
             $('.auth-tab').click(function () {
                 $('.auth-tab').removeClass('active');
@@ -112,6 +125,7 @@
             $('#login-form').submit(function (e) {
                 e.preventDefault();
                 $('#login-error').hide();
+                if (!Validate.validateForm('#login-form')) return;
                 API.post('/api/auth/login', {
                     email: $('#login-email').val(),
                     password: $('#login-password').val()
@@ -127,6 +141,7 @@
             $('#register-form').submit(function (e) {
                 e.preventDefault();
                 $('#register-error').hide();
+                if (!Validate.validateForm('#register-form')) return;
                 API.post('/api/auth/register', {
                     first_name: $('#reg-fname').val(),
                     last_name: $('#reg-lname').val(),

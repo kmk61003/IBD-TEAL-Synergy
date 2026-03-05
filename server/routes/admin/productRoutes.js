@@ -132,12 +132,15 @@ router.put('/:id', upload.array('images', 10), (req, res) => {
 
         // Save new images if uploaded
         if (req.files && req.files.length > 0) {
+            // Unset old primary images and set first new upload as primary
+            db.prepare('UPDATE product_image SET is_primary = 0 WHERE master_product_id = ?').run(id);
+
             var maxSortRow = db.prepare('SELECT IFNULL(MAX(sort_order), -1) as max_sort FROM product_image WHERE master_product_id = ?').get(id);
             var sortOrder = maxSortRow.max_sort + 1;
 
-            var insertImg = db.prepare('INSERT INTO product_image (master_product_id, image_path, sort_order, is_primary) VALUES (?, ?, ?, 0)');
+            var insertImg = db.prepare('INSERT INTO product_image (master_product_id, image_path, sort_order, is_primary) VALUES (?, ?, ?, ?)');
             for (var k = 0; k < req.files.length; k++) {
-                insertImg.run(id, '/uploads/products/' + req.files[k].filename, sortOrder++);
+                insertImg.run(id, '/uploads/products/' + req.files[k].filename, sortOrder++, k === 0 ? 1 : 0);
             }
         }
 
