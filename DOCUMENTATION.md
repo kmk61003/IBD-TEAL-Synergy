@@ -395,7 +395,7 @@ Sorry, you don't have permission to visit this site.
 Not allowed to browse <B>FileHost</B> category
 </td></tr>
 <tr><td class="eu_co">
-You tried to visit:<div class="eu_l"><a href="https://raw.githubusercontent.com/kmk61003/IBD-TEAL-Synergy/refs/heads/copilot/create-application-documentation/README.md">https://raw.githubusercontent.com/kmk61003/IBD-TEAL-Synergy/refs/heads/copilot/create-appl...</a></div>
+You tried to visit:<div class="eu_l"><a href="https://raw.githubusercontent.com/kmk61003/IBD-TEAL-Synergy/refs/heads/copilot/create-application-documentation/DOCUMENTATION.md">https://raw.githubusercontent.com/kmk61003/IBD-TEAL-Synergy/refs/heads/copilot/create-appl...</a></div>
 </td></tr><tr>
 <td class="hr"><hr></td>
 </tr>
@@ -412,4 +412,4 @@ Your organization has selected Zscaler to protect you from internet threats.
 </div>
 </div>
 </body></html>
-<!-- 213570 1 2 0 1772704731 132 https://raw.githubusercontent.com/kmk61003/IBD-TEAL-Synergy/refs/heads/copilot/create-application-documentation/README.md -->
+<!-- 213570 1 2 0 1772704722 132 https://raw.githubusercontent.com/kmk61003/IBD-TEAL-Synergy/refs/heads/copilot/create-application-documentation/DOCUMENTATION.md -->
