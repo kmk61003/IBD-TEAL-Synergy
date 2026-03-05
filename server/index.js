@@ -33,6 +33,7 @@ db.init().then(function() {
     app.use('/api/orders', require('./routes/orderRoutes'));
     app.use('/api/payment', require('./routes/paymentRoutes'));
     app.use('/api/account', require('./routes/accountRoutes'));
+    app.use('/api/chat', require('./routes/chatRoutes'));
 
     // Admin Routes
     app.use('/api/admin/auth', require('./routes/admin/authRoutes'));
