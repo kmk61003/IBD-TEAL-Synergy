@@ -142,7 +142,8 @@ IBD-TEAL-Synergy/
 │           ├── categories.test.js  # CRUD /api/admin/categories
 │           ├── orders.test.js      # GET/PUT /api/admin/orders
 │           └── dashboard.test.js   # GET /api/admin/dashboard
-├── DOCUMENTATION.md        # This file — architecture, flow charts, sequence diagrams
+├── DOCUMENTATION.md        # Architecture, flow charts, and sequence diagrams
+├── SECURITY.md             # Security standards, controls, and architecture
 ├── package.json
 └── README.md
 ```
