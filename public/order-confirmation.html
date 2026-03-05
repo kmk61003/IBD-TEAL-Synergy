@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - IBD Teal Jewelry</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">IBD Teal Jewelry</a>
+            <div class="nav-links">
+                <a href="/">Shop</a>
+                <a href="/cart.html" class="cart-link">Cart (<span id="cart-count">0</span>)</a>
+                <div id="auth-links">
+                    <a href="/login.html">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div id="confirmation-loading" class="loading">Loading order details...</div>
+
+        <div id="confirmation-content" class="confirmation" style="display:none;">
+            <div class="confirmation-header">
+                <h1>Thank You for Your Order!</h1>
+                <p>Your order has been placed successfully.</p>
+                <p class="order-number">Order Number: <strong id="order-number"></strong></p>
+            </div>
+
+            <div class="confirmation-details">
+                <div class="detail-section">
+                    <h3>Shipping Address</h3>
+                    <p id="ship-address"></p>
+                </div>
+                <div class="detail-section">
+                    <h3>Billing Address</h3>
+                    <p id="bill-address"></p>
+                </div>
+            </div>
+
+            <h3>Order Items</h3>
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Metal</th>
+                        <th>Size</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="order-items"></tbody>
+            </table>
+
+            <div class="cart-summary">
+                <div class="summary-totals">
+                    <div class="summary-row"><span>Subtotal</span><span id="conf-subtotal"></span></div>
+                    <div class="summary-row"><span>Taxes</span><span id="conf-taxes"></span></div>
+                    <div class="summary-row total"><span>Total</span><span id="conf-total"></span></div>
+                </div>
+            </div>
+
+            <div class="confirmation-actions">
+                <a href="/" class="btn btn-primary">Continue Shopping</a>
+            </div>
+        </div>
+
+        <div id="confirmation-error" class="error-state" style="display:none;">
+            <p>Order not found.</p>
+            <a href="/" class="btn btn-primary">Go Home</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 IBD Teal Jewelry. All rights reserved.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        $(document).ready(function () {
+            Auth.updateNav();
+            const params = new URLSearchParams(window.location.search);
+            const orderNumber = params.get('order');
+
+            if (!orderNumber) {
+                $('#confirmation-loading').hide();
+                $('#confirmation-error').show();
+                return;
+            }
+
+            API.get('/api/orders/' + encodeURIComponent(orderNumber))
+                .then(order => {
+                    $('#confirmation-loading').hide();
+                    $('#confirmation-content').show();
+
+                    $('#order-number').text(order.order_number);
+
+                    $('#ship-address').html(
+                        `${$('<span>').text(order.ship_fname + ' ' + order.ship_lname).html()}<br>
+                         ${$('<span>').text(order.ship_address1).html()}<br>
+                         ${$('<span>').text(order.ship_pincode + ', ' + order.ship_country_code).html()}<br>
+                         ${$('<span>').text(order.ship_phone).html()}`
+                    );
+
+                    $('#bill-address').html(
+                        `${$('<span>').text(order.bill_fname + ' ' + order.bill_lname).html()}<br>
+                         ${$('<span>').text(order.bill_address1).html()}<br>
+                         ${$('<span>').text(order.bill_pincode + ', ' + order.bill_country_code).html()}<br>
+                         ${$('<span>').text(order.bill_phone).html()}`
+                    );
+
+                    const tbody = $('#order-items');
+                    order.items.forEach(item => {
+                        tbody.append(`
+                            <tr>
+                                <td>${$('<span>').text(item.product_name).html()}</td>
+                                <td>${$('<span>').text(item.sku).html()}</td>
+                                <td>${$('<span>').text(item.metal || '—').html()}</td>
+                                <td>${$('<span>').text(item.size || '—').html()}</td>
+                                <td>${item.quantity}</td>
+                                <td>₹${Number(item.unit_price).toLocaleString()}</td>
+                                <td>₹${Number(item.total_price).toLocaleString()}</td>
+                            </tr>
+                        `);
+                    });
+
+                    $('#conf-subtotal').text('₹' + Number(order.subtotal).toLocaleString());
+                    $('#conf-taxes').text('₹' + Number(order.taxes).toLocaleString());
+                    $('#conf-total').text('₹' + Number(order.order_total).toLocaleString());
+                })
+                .catch(() => {
+                    $('#confirmation-loading').hide();
+                    $('#confirmation-error').show();
+                });
+        });
+    </script>
+</body>
+</html>

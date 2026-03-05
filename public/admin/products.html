@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products - IBD Teal Admin</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar admin-navbar">
+        <div class="nav-container">
+            <a href="/admin/dashboard.html" class="nav-logo">IBD Teal Admin</a>
+            <div class="nav-links">
+                <a href="/admin/dashboard.html">Dashboard</a>
+                <a href="/admin/products.html" class="active">Products</a>
+                <a href="/admin/categories.html">Categories</a>
+                <a href="/admin/orders.html">Orders</a>
+                <span id="admin-name" class="nav-welcome"></span>
+                <a href="#" id="admin-logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Products</h1>
+            <button class="btn btn-primary" id="add-product-btn">+ Add Product</button>
+        </div>
+
+        <!-- Product List -->
+        <table class="data-table" id="product-table">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Variants</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="product-list"></tbody>
+        </table>
+        <div id="product-pagination" class="pagination"></div>
+
+        <!-- Product Modal -->
+        <div id="product-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">Add Product</h2>
+                    <button class="modal-close" id="close-modal">&times;</button>
+                </div>
+                <form id="product-form" enctype="multipart/form-data">
+                    <input type="hidden" id="product-id" />
+                    <div class="form-group">
+                        <label for="p-name">Name *</label>
+                        <input type="text" id="p-name" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="p-short-desc">Short Description</label>
+                        <input type="text" id="p-short-desc" />
+                    </div>
+                    <div class="form-group">
+                        <label for="p-desc">Description</label>
+                        <textarea id="p-desc" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="p-status">Status</label>
+                        <select id="p-status" class="select-input">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="p-categories">Categories</label>
+                        <select id="p-categories" class="select-input" multiple></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="p-images">Images</label>
+                        <input type="file" id="p-images" multiple accept="image/*" />
+                    </div>
+                    <div id="existing-images" class="existing-images"></div>
+                    <div id="form-error" class="error-message" style="display:none;"></div>
+                    <button type="submit" class="btn btn-primary btn-block">Save Product</button>
+                </form>
+
+                <!-- Variants Section (only for edit) -->
+                <div id="variants-section" style="display:none;">
+                    <h3>Variants</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>SKU</th><th>Metal</th><th>Size</th><th>Weight</th><th>Price</th><th>Discount</th><th>Inventory</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody id="variant-list"></tbody>
+                    </table>
+                    <button class="btn btn-sm" id="add-variant-btn">+ Add Variant</button>
+
+                    <div id="variant-form-section" style="display:none; margin-top:15px;">
+                        <h4 id="variant-form-title">Add Variant</h4>
+                        <input type="hidden" id="v-id" />
+                        <div class="form-row">
+                            <div class="form-group"><label>SKU *</label><input type="text" id="v-sku" required /></div>
+                            <div class="form-group"><label>Metal</label><input type="text" id="v-metal" /></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Size</label><input type="text" id="v-size" /></div>
+                            <div class="form-group"><label>Weight (g)</label><input type="number" step="0.001" id="v-weight" /></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Price *</label><input type="number" step="0.01" id="v-price" required /></div>
+                            <div class="form-group"><label>Discount Price</label><input type="number" step="0.01" id="v-discount" /></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Inventory</label><input type="number" id="v-inventory" value="0" /></div>
+                            <div class="form-group"><label>Status</label>
+                                <select id="v-status" class="select-input">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="out_of_stock">Out of Stock</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="save-variant-btn">Save Variant</button>
+                        <button class="btn" id="cancel-variant-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/admin/admin-api.js"></script>
+    <script src="/js/admin/products.js"></script>
+</body>
+</html>

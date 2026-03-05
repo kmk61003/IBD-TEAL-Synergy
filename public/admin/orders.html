@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Orders - IBD Teal Admin</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar admin-navbar">
+        <div class="nav-container">
+            <a href="/admin/dashboard.html" class="nav-logo">IBD Teal Admin</a>
+            <div class="nav-links">
+                <a href="/admin/dashboard.html">Dashboard</a>
+                <a href="/admin/products.html">Products</a>
+                <a href="/admin/categories.html">Categories</a>
+                <a href="/admin/orders.html" class="active">Orders</a>
+                <span id="admin-name" class="nav-welcome"></span>
+                <a href="#" id="admin-logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>Orders</h1>
+
+        <div class="filter-bar">
+            <label>Filter by status:</label>
+            <select id="status-filter" class="select-input">
+                <option value="">All</option>
+                <option value="placed">Placed</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="order-list"></tbody>
+        </table>
+        <div id="order-pagination" class="pagination"></div>
+
+        <!-- Order Detail Modal -->
+        <div id="order-modal" class="modal" style="display:none;">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h2>Order Details</h2>
+                    <button class="modal-close" id="close-order-modal">&times;</button>
+                </div>
+                <div id="order-detail"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/js/admin/admin-api.js"></script>
+    <script>
+        let currentPage = 1;
+
+        $(document).ready(function () {
+            if (!AdminAPI.checkAuth()) return;
+            AdminAPI.initNav();
+            $('#admin-logout').click(function (e) { e.preventDefault(); AdminAPI.logout(); });
+
+            loadOrders(1);
+
+            $('#status-filter').change(function () {
+                loadOrders(1);
+            });
+
+            $('#close-order-modal').click(function () { $('#order-modal').hide(); });
+            $(document).on('click', '#order-modal', function (e) {
+                if (e.target === this) $(this).hide();
+            });
+
+            // View order detail
+            $(document).on('click', '.view-order-btn', function () {
+                const id = $(this).data('id');
+                viewOrder(id);
+            });
+
+            // Update order status
+            $(document).on('change', '.order-status-select', function () {
+                const id = $(this).data('id');
+                const status = $(this).val();
+                AdminAPI.put('/api/admin/orders/' + id, { order_status: status }).then(() => {
+                    loadOrders(currentPage);
+                });
+            });
+        });
+
+        function loadOrders(page) {
+            currentPage = page;
+            const status = $('#status-filter').val();
+            let url = '/api/admin/orders?page=' + page;
+            if (status) url += '&status=' + status;
+
+            AdminAPI.get(url).then(data => {
+                const tbody = $('#order-list');
+                tbody.empty();
+
+                data.orders.forEach(o => {
+                    const customerName = o.customer_first_name
+                        ? $('<span>').text(o.customer_first_name + ' ' + (o.customer_last_name || '')).html()
+                        : $('<span>').text(o.guest_email || 'Guest').html();
+
+                    tbody.append(`
+                        <tr>
+                            <td>${$('<span>').text(o.order_number).html()}</td>
+                            <td>${customerName}</td>
+                            <td>${o.item_count}</td>
+                            <td>₹${Number(o.order_total).toLocaleString()}</td>
+                            <td><span class="badge badge-${o.payment_status}">${o.payment_status}</span></td>
+                            <td>
+                                <select class="select-input select-sm order-status-select" data-id="${o.id}">
+                                    ${['placed','confirmed','shipped','delivered','cancelled'].map(s =>
+                                        `<option value="${s}" ${o.order_status === s ? 'selected' : ''}>${s}</option>`
+                                    ).join('')}
+                                </select>
+                            </td>
+                            <td>${new Date(o.created_at).toLocaleDateString()}</td>
+                            <td><button class="btn btn-sm view-order-btn" data-id="${o.id}">View</button></td>
+                        </tr>
+                    `);
+                });
+
+                const pg = data.pagination;
+                const pagDiv = $('#order-pagination');
+                pagDiv.empty();
+                if (pg.totalPages > 1) {
+                    if (pg.page > 1) pagDiv.append(`<button class="btn btn-sm" onclick="loadOrders(${pg.page - 1})">Prev</button>`);
+                    pagDiv.append(`<span class="page-info">Page ${pg.page} of ${pg.totalPages}</span>`);
+                    if (pg.page < pg.totalPages) pagDiv.append(`<button class="btn btn-sm" onclick="loadOrders(${pg.page + 1})">Next</button>`);
+                }
+            });
+        }
+
+        function viewOrder(id) {
+            AdminAPI.get('/api/admin/orders/' + id).then(order => {
+                let html = `
+                    <div class="order-info-grid">
+                        <div>
+                            <h4>Order Info</h4>
+                            <p><strong>Order #:</strong> ${$('<span>').text(order.order_number).html()}</p>
+                            <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+                            <p><strong>Status:</strong> ${order.order_status}</p>
+                            <p><strong>Payment:</strong> ${order.payment_status}</p>
+                        </div>
+                        <div>
+                            <h4>Billing</h4>
+                            <p>${$('<span>').text(order.bill_fname + ' ' + order.bill_lname).html()}</p>
+                            <p>${$('<span>').text(order.bill_address1).html()}</p>
+                            <p>${$('<span>').text(order.bill_pincode + ', ' + order.bill_country_code).html()}</p>
+                            <p>${$('<span>').text(order.bill_phone).html()}</p>
+                        </div>
+                        <div>
+                            <h4>Shipping</h4>
+                            <p>${$('<span>').text(order.ship_fname + ' ' + order.ship_lname).html()}</p>
+                            <p>${$('<span>').text(order.ship_address1).html()}</p>
+                            <p>${$('<span>').text(order.ship_pincode + ', ' + order.ship_country_code).html()}</p>
+                            <p>${$('<span>').text(order.ship_phone).html()}</p>
+                        </div>
+                    </div>
+                    <h4>Items</h4>
+                    <table class="data-table">
+                        <thead><tr><th>Product</th><th>SKU</th><th>Metal</th><th>Size</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                        <tbody>
+                `;
+
+                order.items.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${$('<span>').text(item.product_name).html()}</td>
+                            <td>${$('<span>').text(item.sku).html()}</td>
+                            <td>${$('<span>').text(item.metal || '—').html()}</td>
+                            <td>${$('<span>').text(item.size || '—').html()}</td>
+                            <td>${item.quantity}</td>
+                            <td>₹${Number(item.unit_price).toLocaleString()}</td>
+                            <td>₹${Number(item.total_price).toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                    <div class="summary-totals" style="max-width:300px;margin-left:auto;">
+                        <div class="summary-row"><span>Subtotal</span><span>₹${Number(order.subtotal).toLocaleString()}</span></div>
+                        <div class="summary-row"><span>Taxes</span><span>₹${Number(order.taxes).toLocaleString()}</span></div>
+                        <div class="summary-row total"><span>Total</span><span>₹${Number(order.order_total).toLocaleString()}</span></div>
+                    </div>
+                `;
+
+                $('#order-detail').html(html);
+                $('#order-modal').show();
+            });
+        }
+    </script>
+</body>
+</html>
