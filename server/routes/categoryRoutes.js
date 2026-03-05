@@ -1,14 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { sql, poolPromise } = require('../config/db');
+const db = require('../config/db');
 
 // GET /api/categories
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
     try {
-        const pool = await poolPromise;
-        const result = await pool.request()
-            .query(`SELECT id, name, slug, status FROM category WHERE status = 'active' ORDER BY name`);
-        res.json(result.recordset);
+        const rows = db.prepare("SELECT id, name, slug, status FROM category WHERE status = 'active' ORDER BY name").all();
+        res.json(rows);
     } catch (err) {
         console.error('Get categories error:', err);
         res.status(500).json({ error: 'Failed to fetch categories.' });

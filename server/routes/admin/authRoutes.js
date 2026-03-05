@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { sql, poolPromise } = require('../../config/db');
+const db = require('../../config/db');
 
 // POST /api/admin/auth/login
 router.post('/login', async (req, res) => {
@@ -13,16 +13,12 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Username and password are required.' });
         }
 
-        const pool = await poolPromise;
-        const result = await pool.request()
-            .input('username', sql.VarChar(100), username)
-            .query('SELECT id, username, password_hash, role FROM admin_user WHERE username = @username');
+        const admin = db.prepare('SELECT id, username, password_hash, role FROM admin_user WHERE username = ?').get(username);
 
-        if (result.recordset.length === 0) {
+        if (!admin) {
             return res.status(401).json({ error: 'Invalid credentials.' });
         }
 
-        const admin = result.recordset[0];
         const valid = await bcrypt.compare(password, admin.password_hash);
 
         if (!valid) {

@@ -5,38 +5,18 @@
  * Usage: npm run seed
  */
 
-const sql = require('mssql');
+const db = require('../server/config/db');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
-
-const config = {
-    server: process.env.DB_SERVER,
-    port: parseInt(process.env.DB_PORT, 10) || 1433,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    options: {
-        encrypt: false,
-        trustServerCertificate: true
-    }
-};
 
 async function seed() {
-    let pool;
     try {
-        pool = await sql.connect(config);
-        console.log('Connected to MSSQL');
-
+        await db.init();
         // ── Admin User ──────────────────────────────────────────────
         const adminHash = await bcrypt.hash('admin123', 10);
-        await pool.request()
-            .input('username', sql.VarChar, 'admin')
-            .input('password_hash', sql.VarChar, adminHash)
-            .query(`
-                IF NOT EXISTS (SELECT 1 FROM admin_user WHERE username = @username)
-                    INSERT INTO admin_user (username, password_hash, role)
-                    VALUES (@username, @password_hash, 'admin');
-            `);
+        const existingAdmin = db.prepare('SELECT 1 FROM admin_user WHERE username = ?').get('admin');
+        if (!existingAdmin) {
+            db.prepare("INSERT INTO admin_user (username, password_hash, role) VALUES (?, ?, 'admin')").run('admin', adminHash);
+        }
         console.log('Admin user seeded (admin / admin123)');
 
         // ── Categories ──────────────────────────────────────────────
@@ -48,27 +28,23 @@ async function seed() {
             { name: 'Pendants', slug: 'pendants' }
         ];
 
-        for (const cat of categories) {
-            await pool.request()
-                .input('name', sql.NVarChar, cat.name)
-                .input('slug', sql.VarChar, cat.slug)
-                .query(`
-                    IF NOT EXISTS (SELECT 1 FROM category WHERE slug = @slug)
-                        INSERT INTO category (name, slug, status) VALUES (@name, @slug, 'active');
-                `);
+        for (var c = 0; c < categories.length; c++) {
+            var cat = categories[c];
+            var existingCat = db.prepare('SELECT 1 FROM category WHERE slug = ?').get(cat.slug);
+            if (!existingCat) {
+                db.prepare("INSERT INTO category (name, slug, status) VALUES (?, ?, 'active')").run(cat.name, cat.slug);
+            }
         }
         console.log('Categories seeded');
 
         // ── Helper: get category id by slug ─────────────────────────
-        async function getCategoryId(slug) {
-            const result = await pool.request()
-                .input('slug', sql.VarChar, slug)
-                .query('SELECT id FROM category WHERE slug = @slug');
-            return result.recordset[0]?.id;
+        function getCategoryId(slug) {
+            var row = db.prepare('SELECT id FROM category WHERE slug = ?').get(slug);
+            return row ? row.id : null;
         }
 
         // ── Products ────────────────────────────────────────────────
-        const products = [
+        var products = [
             {
                 name: 'Eternal Love Diamond Ring',
                 description: 'A stunning solitaire diamond ring set in 18K gold. The perfect symbol of eternal love and commitment. Features a brilliant-cut diamond with exceptional clarity.',
@@ -126,85 +102,44 @@ async function seed() {
             }
         ];
 
-        for (const prod of products) {
-            // Check if product already exists
-            const existing = await pool.request()
-                .input('name', sql.NVarChar, prod.name)
-                .query('SELECT id FROM master_product WHERE name = @name');
+        var insertProduct = db.prepare("INSERT INTO master_product (name, description, short_description, status) VALUES (?, ?, ?, 'active')");
+        var insertVariant = db.prepare("INSERT INTO lot_product (master_product_id, sku, status, metal, size, weight, price, discount_price, inventory) VALUES (?, ?, 'active', ?, ?, ?, ?, ?, ?)");
+        var insertImage = db.prepare("INSERT INTO product_image (master_product_id, image_path, alt_text, sort_order, is_primary) VALUES (?, ?, ?, 0, 1)");
+        var insertMapping = db.prepare("INSERT OR IGNORE INTO product_category_mapping (category_id, master_product_id) VALUES (?, ?)");
 
-            let masterProductId;
+        for (var p = 0; p < products.length; p++) {
+            var prod = products[p];
+            var existing = db.prepare('SELECT id FROM master_product WHERE name = ?').get(prod.name);
 
-            if (existing.recordset.length > 0) {
-                masterProductId = existing.recordset[0].id;
-                console.log(`  Product "${prod.name}" already exists (id=${masterProductId}), skipping insert`);
-            } else {
-                // Insert master product
-                const mpResult = await pool.request()
-                    .input('name', sql.NVarChar, prod.name)
-                    .input('description', sql.NVarChar, prod.description)
-                    .input('short_description', sql.NVarChar, prod.short_description)
-                    .query(`
-                        INSERT INTO master_product (name, description, short_description, status)
-                        OUTPUT INSERTED.id
-                        VALUES (@name, @description, @short_description, 'active');
-                    `);
-                masterProductId = mpResult.recordset[0].id;
-
-                // Insert variants
-                for (const v of prod.variants) {
-                    await pool.request()
-                        .input('master_product_id', sql.Int, masterProductId)
-                        .input('sku', sql.VarChar, v.sku)
-                        .input('metal', sql.NVarChar, v.metal)
-                        .input('size', sql.NVarChar, v.size)
-                        .input('weight', sql.Decimal(10, 3), v.weight)
-                        .input('price', sql.Decimal(12, 2), v.price)
-                        .input('discount_price', sql.Decimal(12, 2), v.discount_price)
-                        .input('inventory', sql.Int, v.inventory)
-                        .query(`
-                            INSERT INTO lot_product (master_product_id, sku, status, metal, size, weight, price, discount_price, inventory)
-                            VALUES (@master_product_id, @sku, 'active', @metal, @size, @weight, @price, @discount_price, @inventory);
-                        `);
-                }
-
-                // Insert placeholder image
-                await pool.request()
-                    .input('master_product_id', sql.Int, masterProductId)
-                    .input('image_path', sql.NVarChar, '/css/placeholder.svg')
-                    .input('alt_text', sql.NVarChar, prod.name)
-                    .query(`
-                        INSERT INTO product_image (master_product_id, image_path, alt_text, sort_order, is_primary)
-                        VALUES (@master_product_id, @image_path, @alt_text, 0, 1);
-                    `);
-
-                // Map categories
-                for (const catSlug of prod.categories) {
-                    const catId = await getCategoryId(catSlug);
-                    if (catId) {
-                        await pool.request()
-                            .input('category_id', sql.Int, catId)
-                            .input('master_product_id', sql.Int, masterProductId)
-                            .query(`
-                                IF NOT EXISTS (
-                                    SELECT 1 FROM product_category_mapping
-                                    WHERE category_id = @category_id AND master_product_id = @master_product_id
-                                )
-                                INSERT INTO product_category_mapping (category_id, master_product_id)
-                                VALUES (@category_id, @master_product_id);
-                            `);
-                    }
-                }
-
-                console.log(`  Product seeded: ${prod.name} (${prod.variants.length} variants)`);
+            if (existing) {
+                console.log('  Product "' + prod.name + '" already exists (id=' + existing.id + '), skipping insert');
+                continue;
             }
+
+            var mpResult = insertProduct.run(prod.name, prod.description, prod.short_description);
+            var masterProductId = mpResult.lastInsertRowid;
+
+            for (var v = 0; v < prod.variants.length; v++) {
+                var vr = prod.variants[v];
+                insertVariant.run(masterProductId, vr.sku, vr.metal, vr.size, vr.weight, vr.price, vr.discount_price, vr.inventory);
+            }
+
+            insertImage.run(masterProductId, '/css/placeholder.svg', prod.name);
+
+            for (var ci = 0; ci < prod.categories.length; ci++) {
+                var catId = getCategoryId(prod.categories[ci]);
+                if (catId) {
+                    insertMapping.run(catId, masterProductId);
+                }
+            }
+
+            console.log('  Product seeded: ' + prod.name + ' (' + prod.variants.length + ' variants)');
         }
 
         console.log('\nSeed completed successfully!');
     } catch (err) {
         console.error('Seed error:', err);
         process.exit(1);
-    } finally {
-        if (pool) await pool.close();
     }
 }
 
