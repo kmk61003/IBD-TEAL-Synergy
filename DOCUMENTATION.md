@@ -100,7 +100,8 @@ IBD-TEAL-Synergy/
 │   ├── css/                # Stylesheets
 │   └── js/                 # Client-side JavaScript modules
 ├── server/
-│   ├── index.js            # Express entry point — middleware, routes, static files
+│   ├── app.js              # Express app (routes + middleware) — imported by tests and index.js
+│   ├── index.js            # Server entry point — initialises DB then calls app.listen()
 │   ├── config/db.js        # sql.js wrapper (init, prepare, transaction helpers)
 │   ├── middleware/
 │   │   ├── auth.js         # JWT guard for customer routes (required)
@@ -121,6 +122,27 @@ IBD-TEAL-Synergy/
 │   │       ├── orderRoutes.js      # List & update order/payment status
 │   │       └── dashboardRoutes.js  # Aggregated stats + recent orders
 │   └── uploads/            # Uploaded product images
+├── tests/                  # Jest unit & integration test suite
+│   ├── helpers/
+│   │   └── dbMock.js           # Shared mock-db factory and common fixtures
+│   ├── middleware/
+│   │   ├── auth.test.js        # Tests for server/middleware/auth.js
+│   │   └── adminAuth.test.js   # Tests for server/middleware/adminAuth.js
+│   └── routes/
+│       ├── auth.test.js        # POST /api/auth/register & /login
+│       ├── categories.test.js  # GET /api/categories
+│       ├── products.test.js    # GET /api/products, product detail, recommendations
+│       ├── cart.test.js        # CRUD /api/cart
+│       ├── orders.test.js      # POST /api/orders, GET /api/orders/:orderNumber
+│       ├── payment.test.js     # POST /api/payment/process
+│       ├── account.test.js     # GET/PUT /api/account/*, wishlist, order history
+│       └── admin/
+│           ├── auth.test.js        # POST /api/admin/auth/login
+│           ├── products.test.js    # CRUD /api/admin/products + variants
+│           ├── categories.test.js  # CRUD /api/admin/categories
+│           ├── orders.test.js      # GET/PUT /api/admin/orders
+│           └── dashboard.test.js   # GET /api/admin/dashboard
+├── DOCUMENTATION.md        # This file — architecture, flow charts, sequence diagrams
 ├── package.json
 └── README.md
 ```
