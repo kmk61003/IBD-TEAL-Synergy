@@ -30,9 +30,9 @@
 
 ## Overview
 
-IBD Teal Jewelry is a full-stack jewellery e-commerce platform built for the Microsoft Hackathon. It provides:
+IBD Teal Jewelry is a full-stack jewelry e-commerce platform built for the Microsoft Hackathon. It provides:
 
-- A **customer-facing storefront** for browsing jewellery, managing a cart, and placing orders.
+- A **customer-facing storefront** for browsing jewelry, managing a cart, and placing orders.
 - A **mock payment flow** that always succeeds (no external payment gateway).
 - An **admin panel** for managing products, categories, and orders.
 
@@ -343,7 +343,7 @@ flowchart TD
     A([Visitor arrives at homepage]) --> B[Browse products\n/ filter by category\n/ search]
     B --> C{Select a product}
     C --> D[View Product Detail Page]
-    D --> E{Choose variant\nmetal · size · weight}
+    D --> E{Choose variant\nmetal / size / weight}
     E --> F[Add to Cart]
     F --> G{Continue shopping?}
     G -- Yes --> B
@@ -376,9 +376,9 @@ flowchart TD
     %% Admin path
     ADM([Admin navigates to\n/admin/login.html]) --> ALOGIN[Admin Login\nPOST /api/admin/auth/login]
     ALOGIN --> ADASH[Admin Dashboard\nStats + Recent Orders]
-    ADASH --> APROD[Manage Products\nCreate · Edit · Delete\nAdd Variants · Upload Images]
-    ADASH --> ACAT[Manage Categories\nCreate · Edit · Delete]
-    ADASH --> AORD[Manage Orders\nView · Update Status]
+    ADASH --> APROD[Manage Products\nCreate / Edit / Delete\nAdd Variants / Upload Images]
+    ADASH --> ACAT[Manage Categories\nCreate / Edit / Delete]
+    ADASH --> AORD[Manage Orders\nView / Update Status]
 ```
 
 ---
@@ -669,15 +669,25 @@ The `adminAuth` middleware checks for the `isAdmin: true` flag and rejects token
 npm install
 
 # 2. Configure environment
-cp .env.example .env   # set SESSION_SECRET, JWT_SECRET, JWT_EXPIRES_IN
+cp .env.example .env   # or create .env manually — see note below
 
-# 3. Seed the database (creates admin user + sample jewellery)
-npm run seed
+# 3. Seed the database (creates admin user + sample jewelry)
+    npm run seed
 
 # 4. Start the server
-npm run dev
+    npm run dev
 # → http://localhost:3000
 ```
+
+> **Note:** The sqllite branch does not ship a `.env.example`.  
+> Create a `.env` file in the project root with at minimum:
+>
+> ```ini
+> SESSION_SECRET=<long-random-string>
+> JWT_SECRET=<another-long-random-string>
+> JWT_EXPIRES_IN=24h
+> PORT=3000
+> ```
 
 The SQLite database file is created automatically at `db/jewelry.db` on first run.
 
