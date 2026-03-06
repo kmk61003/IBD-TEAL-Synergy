@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment - IBD Teal Jewelry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -218,13 +221,6 @@
                 e.preventDefault();
                 if (!Validate.validateForm('#card-form')) return;
 
-                // Luhn check
-                var cardNum = $('#card_number').val();
-                if (!Validate.luhn(cardNum)) {
-                    Validate.showError($('#card_number')[0], 'Invalid card number.');
-                    return;
-                }
-
                 // Expiry check
                 var expiry = $('#card_expiry').val().trim();
                 if (!Validate.isExpiryValid(expiry)) {
@@ -282,5 +278,7 @@
         });
     </script>
     <script src="/js/chatbot.js"></script>
+    <button id="back-to-top" title="Back to top">&uarr;</button>
+    <script src="/js/animations.js"></script>
 </body>
 </html>
